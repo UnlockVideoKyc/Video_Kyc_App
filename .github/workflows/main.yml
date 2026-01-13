@@ -1,4 +1,4 @@
-name: CI/CD with Commitlint, AWS & Slack
+name: CI/CD – Self Hosted Runner (Video KYC)
 
 on:
   push:
@@ -8,15 +8,15 @@ on:
 jobs:
   commitlint:
     name: Validate Commit Message
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Node (LTS)
+      - name: Setup Node.js (LTS)
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
@@ -27,7 +27,7 @@ jobs:
       - name: Run Commitlint
         run: npx commitlint --from=HEAD~1 --to=HEAD
 
-      - name: Slack Notification (Commit Failed)
+      - name: Slack Notification – Commit Failed
         if: failure()
         run: |
           curl -X POST -H 'Content-type: application/json' \
@@ -35,75 +35,46 @@ jobs:
           ${{ secrets.SLACK_WEBHOOK_URL }}
 
   deploy:
-    name: Deploy Video_Kyc_App (Frontend + Backend)
+    name: Deploy Video KYC App (Backend + Frontend)
     needs: commitlint
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node (LTS)
+      - name: Setup Node.js (LTS)
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
 
-      # ---------------- BACKEND ----------------
-      - name: Install Backend Dependencies
+      # ---------------- BACKEND DEPLOY ----------------
+      - name: Deploy Backend
         run: |
+          cd /var/www/Video_Kyc_App
+          git pull origin main
+
           cd backend
-          npm install
+          npm install --production
 
-      - name: Copy Backend to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.AWS_EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.AWS_EC2_KEY }}
-          source: "backend/*"
-          target: "/var/www/Video_Kyc_App/backend"
+          pm2 restart Video_Kyc_App-backend || \
+          pm2 start src/server.js --name Video_Kyc_App-backend
 
-      - name: Restart Backend with PM2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.AWS_EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.AWS_EC2_KEY }}
-          script: |
-            cd /var/www/Video_Kyc_App/backend
-            npm install --production
-            pm2 restart Video_Kyc_App-backend || pm2 start src/server.js --name Video_Kyc_App-backend
-            pm2 save
+          pm2 save
 
-      # ---------------- FRONTEND ----------------
-      - name: Install & Build Frontend
+      # ---------------- FRONTEND BUILD ----------------
+      - name: Build Frontend
         run: |
-          cd frontend
+          cd /var/www/Video_Kyc_App/frontend
           npm install
           NODE_OPTIONS="--max-old-space-size=2048" npm run build
 
-      - name: Copy Frontend Build to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.AWS_EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.AWS_EC2_KEY }}
-          source: "frontend/dist/*"
-          target: "/var/www/Video_Kyc_App/frontend/dist"
+          sudo nginx -t
+          sudo systemctl reload nginx
 
-      - name: Reload Nginx
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.AWS_EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.AWS_EC2_KEY }}
-          script: |
-            sudo nginx -t
-            sudo systemctl reload nginx
-
-      # ---------------- SLACK ----------------
-      - name: Slack Success Notification
+      # ---------------- SLACK SUCCESS ----------------
+      - name: Slack Notification – Deploy Success
         run: |
           curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"✅ *Deployment Successful!*\\nApp: Video_Kyc_App\\nBranch: main\\nBy: ${{ github.actor }}\"}" \
+          --data "{\"text\":\"✅ *Deployment Successful!*\\nApp: Video_Kyc_App\\nBranch: main\\nDeployed by: ${{ github.actor }}\"}" \
           ${{ secrets.SLACK_WEBHOOK_URL }}
