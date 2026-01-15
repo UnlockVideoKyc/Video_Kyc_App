@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Paper,
   Box,
@@ -7,48 +7,125 @@ import {
   Button,
   InputAdornment,
   IconButton,
-} from '@mui/material';
-import { Lock, Visibility, VisibilityOff } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
+  Alert,
+  CircularProgress,
+} from "@mui/material";
+import { VisibilityOff, Visibility, Lock } from "@mui/icons-material";
+import { Link, useNavigate } from "react-router-dom";
 
-// Import your images
-import loginImage from '../assets/login-bg.png';
-import wavingHand from '../assets/waving-hand.png';
+import loginImage from "../assets/login-bg.png";
+import wavingHand from "../assets/waving-hand.png";
 
 const ChangePasswordPage = () => {
-  const [formData, setFormData] = useState({
-    newPassword: '',
-    confirmPassword: ''
-  });
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState({
     newPassword: false,
-    confirmPassword: false
+    confirmPassword: false,
+  });
+
+  const [formData, setFormData] = useState({
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const handleChange = (field) => (event) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: event.target.value
+      [field]: event.target.value,
+    }));
+    
+    // Clear errors when user starts typing
+    if (error) setError("");
+    if (success) setSuccess("");
+  };
+
+  const togglePasswordVisibility = (field) => {
+    setShowPassword((prev) => ({
+      ...prev,
+      [field]: !prev[field],
     }));
   };
 
-  const handleClickShowPassword = (field) => {
-    setShowPassword(prev => ({
-      ...prev,
-      [field]: !prev[field]
-    }));
-  };
-
-  const handleSubmit = (event) => {
+  // Handle password change
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log('Change password data:', formData);
-    // Handle password change logic here
+    setError("");
+    setSuccess("");
+
+    // Validation
+    if (!formData.newPassword || !formData.confirmPassword) {
+      setError("Please fill in all fields");
+      return;
+    }
+
+    if (formData.newPassword.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    if (formData.newPassword !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    const resetToken = localStorage.getItem("resetToken");
+    if (!resetToken) {
+      setError("Session expired. Please restart the password reset process.");
+      setTimeout(() => navigate("/forgot-password"), 2000);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/auth/reset-password",
+        {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${resetToken}`
+          },
+          body: JSON.stringify({
+            newPassword: formData.newPassword,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to reset password");
+      }
+
+      // Success
+      setSuccess("Password changed successfully! Redirecting to login...");
+      
+      // Clear local storage
+      localStorage.removeItem("resetToken");
+      localStorage.removeItem("fp_userId");
+      localStorage.removeItem("fp_expiry");
+      
+      // Redirect to login after 2 seconds
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+
+    } catch (err) {
+      console.error("Change password error:", err);
+      setError(err.message || "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Paper 
+    <Paper
       elevation={0}
-      sx={{ 
+      sx={{
         minHeight: '100vh',
         width: '100vw',
         background: 'white',
@@ -58,9 +135,9 @@ const ChangePasswordPage = () => {
         overflow: 'hidden'
       }}
     >
-      {/* Left Side - Image (60%) - Hidden on mobile */}
-      <Box 
-        sx={{ 
+      {/* Left Side - Image */}
+      <Box
+        sx={{
           width: { xs: '0%', lg: '60%' },
           height: '100vh',
           display: { xs: 'none', lg: 'flex' },
@@ -71,17 +148,13 @@ const ChangePasswordPage = () => {
           component="img"
           src={loginImage}
           alt="Change Password Visual"
-          sx={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover'
-          }}
+          sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       </Box>
 
-      {/* Right Side - Change Password Form (40% on desktop, 100% on mobile) */}
-      <Box 
-        sx={{ 
+      {/* Right Side - Form */}
+      <Box
+        sx={{
           width: { xs: '100%', lg: '40%' },
           height: '100vh',
           display: 'flex',
@@ -90,7 +163,7 @@ const ChangePasswordPage = () => {
           py: { xs: 0, lg: 0 }
         }}
       >
-        <Paper 
+        <Paper
           elevation={0}
           sx={{
             p: { xs: 4, sm: 5, md: 6 },
@@ -104,78 +177,76 @@ const ChangePasswordPage = () => {
             justifyContent: { xs: 'center', sm: 'flex-start' }
           }}
         >
-          {/* Header Section */}
-          <Box sx={{ 
-              mb: 4, 
-              textAlign: 'center'
-            }}>
-              {/* Set New Password with waving hand */}
-              <Box sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 1,
-                mb: 1,
-                justifyContent: 'left'
-              }}>
-                <Typography 
-                  variant="h3" 
-                  // component="h1"
-                  component={Link}
-                to="/login"
-                  sx={{
-                    fontWeight: 700,
-                    color: '#212529',
-                    fontSize: { 
-                      xs: '2rem',
-                      sm: '2.125rem',
-                      md: '2.25rem'
-                    },
-                    lineHeight: 1.2,
-                    textDecoration: "none"
-                  }}
-                >
-                  Set New Password
-                </Typography>
-                <Box
-                  component="img"
-                  src={wavingHand}
-                  alt="Waving hand"
-                  sx={{
-                    width: { 
-                      xs: '32px', 
-                      sm: '34px', 
-                      md: '36px'
-                    },
-                    height: { 
-                      xs: '32px', 
-                      sm: '34px', 
-                      md: '36px'
-                    }
-                  }}
-                />
-              </Box>
-
-              {/* Subheading */}
-              <Typography 
-                variant="h6"
-                sx={{
-                  color: '#212529',
-                  fontWeight: 500,
-                  fontSize: { 
-                    xs: '1rem', 
-                    sm: '1.05rem',
-                    md: '1.1rem'
-                  },
-                  textAlign: 'left'
+          {/* Header */}
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, justifyContent: 'left' }}>
+              <Typography
+                variant="h3"
+                component="h1"
+                sx={{ 
+                  fontWeight: 700, 
+                  color: '#212529', 
+                  fontSize: { xs: '2rem', sm: '2.125rem', md: '2.25rem' }, 
+                  lineHeight: 1.2 
                 }}
               >
-                Please kindly set your new password.
+                Set New Password
               </Typography>
+              <Box
+                component="img"
+                src={wavingHand}
+                alt="Waving hand"
+                sx={{ 
+                  width: { xs: '32px', sm: '34px', md: '36px' }, 
+                  height: { xs: '32px', sm: '34px', md: '36px' } 
+                }}
+              />
             </Box>
+            <Typography
+              variant="h6"
+              sx={{ 
+                color: '#212529', 
+                fontWeight: 500, 
+                fontSize: { xs: '1rem', sm: '1.05rem', md: '1.1rem' },
+                textAlign: 'left'
+              }}
+            >
+              Create a new secure password for your account
+            </Typography>
+          </Box>
 
-          {/* Change Password Form */}
+          {/* Error Alert */}
+          {error && (
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3, 
+                borderRadius: '8px',
+                '& .MuiAlert-message': { fontSize: '0.875rem' }
+              }}
+              onClose={() => setError('')}
+            >
+              {error}
+            </Alert>
+          )}
+
+          {/* Success Alert */}
+          {success && (
+            <Alert 
+              severity="success" 
+              sx={{ 
+                mb: 3, 
+                borderRadius: '8px',
+                '& .MuiAlert-message': { fontSize: '0.875rem' }
+              }}
+            >
+              {success}
+            </Alert>
+          )}
+
+          {/* Form */}
           <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
-            {/* New Password Field */}
+            {/* New Password */}
             <TextField
               fullWidth
               label="New Password"
@@ -183,25 +254,19 @@ const ChangePasswordPage = () => {
               variant="outlined"
               value={formData.newPassword}
               onChange={handleChange('newPassword')}
+              required
+              disabled={loading}
               sx={{
                 mb: 3,
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '8px',
-                  '& fieldset': {
-                    borderColor: '#dee2e6',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#1C43A6',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#1C43A6',
-                  },
+                  '& fieldset': { borderColor: '#dee2e6' },
+                  '&:hover fieldset': { borderColor: '#1C43A6' },
+                  '&.Mui-focused fieldset': { borderColor: '#1C43A6' },
                 },
-                '& .MuiInputLabel-root': {
-                  color: '#6c757d',
-                  '&.Mui-focused': {
-                    color: '#1C43A6',
-                  },
+                '& .MuiInputLabel-root': { 
+                  color: '#6c757d', 
+                  '&.Mui-focused': { color: '#1C43A6' } 
                 },
               }}
               InputProps={{
@@ -213,44 +278,40 @@ const ChangePasswordPage = () => {
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
+                      onClick={() => togglePasswordVisibility('newPassword')}
                       edge="end"
-                      onClick={() => handleClickShowPassword('newPassword')}
                       sx={{ color: '#6c757d' }}
+                      disabled={loading}
                     >
-                      {showPassword.newPassword ? <VisibilityOff /> : <Visibility />}
+                      {showPassword.newPassword ? <Visibility /> : <VisibilityOff />}
                     </IconButton>
                   </InputAdornment>
                 ),
               }}
+              helperText="Password must be at least 6 characters long"
             />
 
-            {/* Confirm Password Field */}
+            {/* Confirm Password */}
             <TextField
               fullWidth
-              label="Confirm Password"
+              label="Confirm New Password"
               type={showPassword.confirmPassword ? 'text' : 'password'}
               variant="outlined"
               value={formData.confirmPassword}
               onChange={handleChange('confirmPassword')}
+              required
+              disabled={loading}
               sx={{
                 mb: 4,
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '8px',
-                  '& fieldset': {
-                    borderColor: '#dee2e6',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#1C43A6',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#1C43A6',
-                  },
+                  '& fieldset': { borderColor: '#dee2e6' },
+                  '&:hover fieldset': { borderColor: '#1C43A6' },
+                  '&.Mui-focused fieldset': { borderColor: '#1C43A6' },
                 },
-                '& .MuiInputLabel-root': {
-                  color: '#6c757d',
-                  '&.Mui-focused': {
-                    color: '#1C43A6',
-                  },
+                '& .MuiInputLabel-root': { 
+                  color: '#6c757d', 
+                  '&.Mui-focused': { color: '#1C43A6' } 
                 },
               }}
               InputProps={{
@@ -262,24 +323,23 @@ const ChangePasswordPage = () => {
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
+                      onClick={() => togglePasswordVisibility('confirmPassword')}
                       edge="end"
-                      onClick={() => handleClickShowPassword('confirmPassword')}
                       sx={{ color: '#6c757d' }}
+                      disabled={loading}
                     >
-                      {showPassword.confirmPassword ? <VisibilityOff /> : <Visibility />}
+                      {showPassword.confirmPassword ? <Visibility /> : <VisibilityOff />}
                     </IconButton>
                   </InputAdornment>
                 ),
               }}
             />
 
-            {/* Set Password Button */}
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              component={Link}
-              to="/work-dashboard"
+              disabled={loading}
               sx={{
                 backgroundColor: '#1C43A6',
                 color: 'white',
@@ -288,13 +348,36 @@ const ChangePasswordPage = () => {
                 fontWeight: 500,
                 textTransform: 'none',
                 borderRadius: '8px',
-                '&:hover': {
-                  backgroundColor: '#15337D',
-                },
+                '&:hover': { backgroundColor: '#15337D' },
+                '&:disabled': { backgroundColor: '#cccccc' },
+                mb: 2
               }}
             >
-              Set Password
+              {loading ? (
+                <CircularProgress size={24} sx={{ color: 'white' }} />
+              ) : (
+                'Reset Password'
+              )}
             </Button>
+
+            <Box sx={{ textAlign: 'center', mt: 3 }}>
+              <Typography
+                component={Link}
+                to="/login"
+                sx={{
+                  color: '#1C43A6',
+                  textDecoration: 'none',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  '&:hover': { 
+                    textDecoration: 'underline', 
+                    color: '#15337D' 
+                  }
+                }}
+              >
+                ← Back to Login
+              </Typography>
+            </Box>
           </Box>
         </Paper>
       </Box>

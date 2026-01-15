@@ -1,77 +1,3 @@
-// import Header from "./components/Header";
-// import "./App.css";
-// import WorkDashboard from "./pages/AgentDashboard/WorkDashboard";
-// import CheckLocationVerify from "./pages/AgentDashboard/CheckLocationVerify";
-// import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-// import CheckLocationMap from "./pages/AgentDashboard/CheckLocationMap";
-// import QandA from "./pages/AgentDashboard/QandA";
-// import CheckLiveFace from "./pages/AgentDashboard/CheckLiveFace";
-// import CheckAadharCard from "./pages/AgentDashboard/CheckAadharCard";
-// import CheckAadharDetailsTable from "./pages/AgentDashboard/CheckAadharDetailsTable";
-// import CheckPanCard from "./pages/AgentDashboard/CheckPanCard";
-// import CheckPanDetailsTable from "./pages/AgentDashboard/CheckPanDetailsTable";
-// import FinalReport from "./pages/AgentDashboard/FinalReport";
-// import HorizontalStepper from "./components/HorizontalStepper";
-// // import LiveCustomersPage from "./components/LiveScheduleTable";
-// // import MissedCallsPage from "./components/MissedCallsTable";
-// import LoginPage from "./pages/LoginPage";
-
-// function AppContent() {
-//   const location = useLocation();
-
-
-//   const showStepperPaths = [
-//     // '/check-location',
-//     '/check-location-map',
-//     '/question-answer',
-//     '/check-face',
-//     '/check-aadhar-face',
-//     '/check-aadhar-details-table',
-//     '/check-pan-face',
-//     '/check-pan-details-table'
-//   ];
-
-
-//   const showStepper = showStepperPaths.some(path => location.pathname.includes(path));
-
-//   return (
-//     <div className="App">
-//       <LoginPage></LoginPage>
-//       <Header />
-//       <div className="container-fluid">
-//         {showStepper && <HorizontalStepper />}
-//         <Routes>
-//           <Route path="/*" element={<WorkDashboard />} />
-//           {/* <Route path="/live-customers" element={<LiveCustomersPage />} />
-//         <Route path="/missed-calls" element={<MissedCallsPage />} /> */}
-//           <Route path="/check-location" element={<CheckLocationVerify />} />
-//           <Route path="/check-location-map" element={<CheckLocationMap />} />
-//           <Route path="/question-answer" element={<QandA />} />
-//           <Route path="/check-face" element={<CheckLiveFace />} />
-//           <Route path="/check-aadhar-face" element={<CheckAadharCard />} />
-//           <Route path="/check-aadhar-details-table" element={<CheckAadharDetailsTable />} />
-//           <Route path="/check-pan-face" element={<CheckPanCard />} />
-//           <Route path="/check-pan-details-table" element={<CheckPanDetailsTable />} />
-//           <Route path="/final-report" element={<FinalReport />} />
-//         </Routes>
-//       </div>
-//     </div>
-//   );
-// }
-
-// function App() {
-//   return (
-//     <Router>
-//       <AppContent />
-//            {/* <LoginPage/> */}
-//     </Router>
-//   );
-// }
-
-// export default App;
-
-
-
 import Header from "./components/Header";
 import "./App.css";
 import WorkDashboard from "./pages/AgentDashboard/WorkDashboard";
@@ -89,7 +15,7 @@ import HorizontalStepper from "./components/HorizontalStepper";
 import LoginPage from "./pages/LoginPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
-import LoginOtpPage from "./pages/LoginOtpPage";
+import OtpPage from "./pages/OtpPage";
 
 function AppContent() {
   const location = useLocation();
@@ -113,6 +39,7 @@ function AppContent() {
     location.pathname === '/login' ||
     location.pathname === '/otp' ||
     location.pathname === '/forgot-password' ||
+    location.pathname === '/forgot-password-otp' ||
     location.pathname === '/change-password';
 
   return (
@@ -121,8 +48,9 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/otp" element={<LoginOtpPage />} />
+          <Route path="/otp" element={<OtpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/forgot-password-otp" element={<OtpPage />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />
         </Routes>
       ) : (
@@ -153,7 +81,7 @@ function App() {
   return (
     // <Router>
       <AppContent />
-    /* </Router> */
+    // </Router>
   );
 }
 
