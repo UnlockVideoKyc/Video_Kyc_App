@@ -7,4 +7,15 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
 });
 
+(async () => {
+  try {
+    const connection = await pool.getConnection();
+    console.log("MySQL connected");
+    connection.release();
+  } catch (err) {
+    console.error("MySQL connection failed:", err.message);
+    process.exit(1);
+  }
+})();
+
 module.exports = pool;

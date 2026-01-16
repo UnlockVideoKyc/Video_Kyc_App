@@ -3,15 +3,18 @@ const nodemailer = require("nodemailer");
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
   },
 });
 
 exports.sendOTP = async (email, otp) => {
   await transporter.sendMail({
+    from: `"DigiKhata" <${process.env.MAIL_USER}>`,
     to: email,
-    subject: "Your DigiKhata Login OTP",
-    html: `<h2>Your OTP is: ${otp}</h2>`,
+    subject: "Your Login OTP",
+    text: `Your OTP is ${otp}. It expires in 100 seconds.`,
   });
 };
+
+

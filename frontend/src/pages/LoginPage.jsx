@@ -393,64 +393,66 @@ const LoginPage = () => {
     setShowPassword(!showPassword);
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    
-    if (!formData.email || !formData.password || !formData.role) {
-      alert('Please fill all fields');
-      return;
-    }
+const handleSubmit = async (event) => {
+  event.preventDefault();
 
-    setLoading(true);
+  if (!formData.email || !formData.password || !formData.role) {
+    alert("Please fill all fields");
+    return;
+  }
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+  setLoading(true);
+  try {
+    const response = await fetch(
+      "http://localhost:5000/api/auth/login",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
-          password: formData.password
-          // Note: role might not be needed for auth, depends on your backend
+          password: formData.password,
         }),
-      });
-
-      const data = await response.json();
-      
-      // Debug log
-      console.log('Login response:', data);
-      console.log('Has expiresAt?', 'expiresAt' in data);
-
-      if (response.ok) {
-        // ✅ Save userId for OTP verification
-        localStorage.setItem('userId', data.userId);
-
-        // ✅ Save OTP expiry time from backend
-        if (data.expiresAt) {
-          localStorage.setItem('otpExpiry', data.expiresAt);
-          console.log('OTP expiry saved from backend:', data.expiresAt);
-        } else {
-          // Fallback: set 5 minutes from now
-          const fallbackExpiry = new Date(Date.now() + 5 * 60 * 1000);
-          localStorage.setItem('otpExpiry', fallbackExpiry.toISOString());
-          console.log('Using fallback expiry (5 min from now):', fallbackExpiry.toISOString());
-        }
-
-        // ✅ Clear any old token
-        localStorage.removeItem('token');
-        
-        // ✅ Redirect to OTP page
-        navigate('/otp');
-      } else {
-        alert(data.message || 'Login failed. Please check your credentials.');
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      alert('Network error. Please check your connection and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    );
 
+    // If backend returned error status
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || "Login failed");
+    }
+
+    const data = await response.json();
+
+    console.log("Login response:", data);
+
+    // Save userId
+    localStorage.setItem("userId", data.userId);
+
+    // Save OTP expiry
+    if (data.expiresAt) {
+      localStorage.setItem("otpExpiry", data.expiresAt);
+    } else {
+      const fallbackExpiry = new Date(Date.now() + 5 * 60 * 1000);
+      localStorage.setItem("otpExpiry", fallbackExpiry.toISOString());
+    }
+
+    // Clear old token if any
+    localStorage.removeItem("token");
+
+    // Redirect to OTP page
+    navigate("/otp");
+  } catch (error) {
+    console.error("Login error:", error);
+    alert(error.message || "Network error. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
+ 
+ 
   return (
     <Paper
       elevation={0}

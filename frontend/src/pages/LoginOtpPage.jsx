@@ -113,56 +113,61 @@ const LoginOtpPage = () => {
   };
 
   // ✅ VERIFY OTP
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
+const handleVerifyOtp = async (e) => {
+  e.preventDefault();
 
-    const userId = localStorage.getItem('userId');
-    if (!userId) {
-      alert('Session expired. Please login again.');
-      navigate('/login');
-      return;
-    }
+  const userId = localStorage.getItem("userId");
+  if (!userId) {
+    alert("Session expired. Please login again.");
+    navigate("/login");
+    return;
+  }
 
-    // Check if all OTP digits are filled
-    if (otp.some(digit => digit === '')) {
-      alert('Please enter all 6 digits of the OTP');
-      return;
-    }
+  if (otp.some(digit => digit === "")) {
+    alert("Please enter all 6 digits of the OTP");
+    return;
+  }
 
-    const otpString = otp.join('');
+  const otpString = otp.join("");
 
-    try {
-      const response = await fetch(
-        '/api/auth/verify-otp',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: Number(userId),
-            otp: otpString,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || 'Invalid OTP');
-        // Clear OTP on invalid attempt
-        setOtp(['', '', '', '', '', '']);
-        inputRefs.current[0].focus();
-        return;
+  try {
+    const response = await fetch(
+      "http://localhost:5000/api/auth/verify-otp", 
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: Number(userId),
+          otp: otpString,
+        }),
       }
+    );
 
-      localStorage.setItem('token', data.token);
-      localStorage.removeItem('userId');
-      localStorage.removeItem('otpExpiry');
-      navigate('/work-dashboard');
-    } catch (error) {
-      console.error(error);
-      alert('Something went wrong');
+    
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : {};
+
+    if (!response.ok) {
+      alert(data.message || "Invalid OTP");
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0].focus();
+      return;
     }
-  };
+
+    // Save JWT
+    localStorage.setItem("token", data.token);
+
+    // Cleanup
+    localStorage.removeItem("userId");
+    localStorage.removeItem("otpExpiry");
+
+    navigate("/work-dashboard");
+  } catch (error) {
+    console.error("OTP verify error:", error);
+    alert("Something went wrong. Please try again.");
+  }
+};
+
 
   // 🔁 RESEND OTP
   const handleResendOtp = async () => {
