@@ -34,11 +34,11 @@ jobs:
         if: failure()
         run: |
           curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"❌ Commitlint failed\nAuthor: ${{ github.actor }}\"}" \
+          --data "{\"text\":\"❌ Commitlint failed\nRepo: ${{ github.repository }}\nAuthor: ${{ github.actor }}\"}" \
           ${{ secrets.SLACK_WEBHOOK_URL }}
 
 # --------------------------------------------------
-# JOB 2: BUILD FRONTEND (CLOUD – NO EC2 RAM USAGE)
+# JOB 2: BUILD FRONTEND (CLOUD – SAFE)
 # --------------------------------------------------
   build-frontend:
     name: Build Frontend (GitHub Runner)
@@ -79,7 +79,15 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      # ---- BACKEND DEPLOY ----
+      # ---------- UPDATE SERVER CODE ----------
+      - name: Pull latest code on server
+        run: |
+          cd /var/www/Video_Kyc_App
+          git fetch origin
+          git reset --hard origin/main
+          git rev-parse --short HEAD
+
+      # ---------- BACKEND DEPLOY ----------
       - name: Deploy Backend
         run: |
           cd /var/www/Video_Kyc_App/backend
@@ -97,7 +105,7 @@ jobs:
           sleep 5
           curl -f http://localhost:5000/api/health
 
-      # ---- FRONTEND DEPLOY ----
+      # ---------- FRONTEND DEPLOY ----------
       - name: Download frontend build
         uses: actions/download-artifact@v4
         with:
@@ -113,7 +121,7 @@ jobs:
           sudo nginx -t
           sudo systemctl reload nginx
 
-      # ---- SLACK SUCCESS ----
+      # ---------- SLACK SUCCESS ----------
       - name: Slack – Deploy Success
         run: |
           curl -X POST -H 'Content-type: application/json' \
