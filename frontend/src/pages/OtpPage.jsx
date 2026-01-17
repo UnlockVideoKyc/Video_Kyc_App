@@ -1,501 +1,311 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from "react";
 import {
   Paper,
   Box,
   Typography,
   TextField,
   Button,
-  InputAdornment,
   Alert,
   CircularProgress,
-} from '@mui/material';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+} from "@mui/material";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import loginImage from "../assets/login-bg.png";
 
-import loginImage from '../assets/login-bg.png';
-
-const getTimeLeftFromExpiry = (storageKey) => {
-  const expiry = localStorage.getItem(storageKey);
+// ---------------------------------------
+// Helper Functions
+// ---------------------------------------
+const getTimeLeft = (expiry) => {
   if (!expiry) return 0;
-
-  const diff = Math.floor(
-    (new Date(expiry).getTime() - Date.now()) / 1000
-  );
-
+  const diff = Math.floor((new Date(expiry).getTime() - Date.now()) / 1000);
   return diff > 0 ? diff : 0;
 };
 
 const formatTime = (seconds) => {
-  if (seconds <= 0 || isNaN(seconds)) {
-    return "00:00";
-  }
-  
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  
-  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  if (seconds <= 0 || isNaN(seconds)) return "00:00";
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 };
 
 const OtpPage = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  
-  // Determine if this is for login or forgot password
-  const isForgotPassword = location.pathname.includes('forgot-password-otp');
-  
-  // Configuration based on type
-  const config = {
-    // For Login OTP
-    login: {
-      title: "OTP Verification",
-      subtitle: "Enter the 6-digit code sent to your email",
-      userIdKey: 'userId',
-      expiryKey: 'otpExpiry',
-      verifyEndpoint: 'http://localhost:5000/api/auth/verify-otp',
-      resendEndpoint: 'http://localhost:5000/api/auth/resend-otp',
-      successRedirect: '/work-dashboard',
-      backLink: '/login',
-      backText: 'Back to Login',
-      storageCleanup: () => {
-        localStorage.removeItem('userId');
-        localStorage.removeItem('otpExpiry');
-      },
-      successStorage: (data) => {
-        localStorage.setItem('token', data.token);
-      }
-    },
-    // For Forgot Password OTP
-    forgotPassword: {
-      title: "OTP Verification",
-      subtitle: "Enter the 6-digit code sent to your email",
-      userIdKey: 'fp_userId',
-      expiryKey: 'fp_expiry',
-      verifyEndpoint: 'http://localhost:5000/api/auth/verify-forgot-otp',
-      resendEndpoint: 'http://localhost:5000/api/auth/resend-otp',
-      successRedirect: '/change-password',
-      backLink: '/forgot-password',
-      backText: 'Back to Forgot Password',
-      storageCleanup: () => {
-        localStorage.removeItem('fp_expiry');
-        // Don't remove fp_userId - it's needed for reset-password
-      },
-      successStorage: (data) => {
-        localStorage.setItem('resetToken', data.resetToken);
-      }
-    }
+  const location = useLocation();
+
+  // ---------------------------------------
+  // Detect LOGIN or FORGOT mode
+  // ---------------------------------------
+  const detectMode = () => {
+    const fp = localStorage.getItem("fp_agtLoginId");
+    const login = localStorage.getItem("agtLoginId");
+
+    if (fp && !login) return "FORGOT";
+    if (login && !fp) return "LOGIN";
+
+    return location.pathname.includes("forgot") ? "FORGOT" : "LOGIN";
   };
 
-  const currentConfig = isForgotPassword ? config.forgotPassword : config.login;
-  
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [timeLeft, setTimeLeft] = useState(() => {
-    const time = getTimeLeftFromExpiry(currentConfig.expiryKey);
-    return time > 0 ? time : 0;
-  });
-  const [resending, setResending] = useState(false);
+  const otpPurpose = detectMode();
+
+  // ---------------------------------------
+  // Config
+  // ---------------------------------------
+  const config = {
+    LOGIN: {
+      userIdKey: "agtLoginId",
+      expiryKey: "otpExpiry",
+      verifyEndpoint: "http://localhost:5000/api/auth/verify-otp",
+      resendEndpoint: "http://localhost:5000/api/auth/resend-otp",
+      successRedirect: "/work-dashboard",
+      backLink: "/login",
+      successAction: (data) => localStorage.setItem("token", data.token),
+      cleanup: () => {
+        localStorage.removeItem("agtLoginId");
+        localStorage.removeItem("otpExpiry");
+      },
+    },
+    FORGOT: {
+      userIdKey: "fp_agtLoginId",
+      expiryKey: "fp_expiry",
+      verifyEndpoint: "http://localhost:5000/api/auth/verify-forgot-otp",
+      resendEndpoint: "http://localhost:5000/api/auth/resend-otp",
+      successRedirect: "/change-password",
+      backLink: "/forgot-password",
+      successAction: (data) => localStorage.setItem("resetToken", data.resetToken),
+      cleanup: () => {
+        localStorage.removeItem("fp_expiry");
+      },
+    },
+  };
+
+  const current = config[otpPurpose];
+
+  // ---------------------------------------
+  // States
+  // ---------------------------------------
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
+  const [resending, setResending] = useState(false);
+
   const inputRefs = useRef([]);
 
+  // ---------------------------------------
+  // Load initial expiry
+  // ---------------------------------------
   useEffect(() => {
-    inputRefs.current = inputRefs.current.slice(0, 6);
-  }, []);
+    const expiry = localStorage.getItem(current.expiryKey);
+    setTimeLeft(getTimeLeft(expiry));
+  }, [current.expiryKey]);
 
-  // Countdown timer
+  // ---------------------------------------
+  // Timer - updates every second
+  // ---------------------------------------
   useEffect(() => {
-    const timer = setInterval(() => {
-      const newTime = getTimeLeftFromExpiry(currentConfig.expiryKey);
-      setTimeLeft(newTime > 0 ? newTime : 0);
+    const interval = setInterval(() => {
+      const expiry = localStorage.getItem(current.expiryKey);
+      const left = getTimeLeft(expiry);
+      setTimeLeft(left);
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [currentConfig.expiryKey]);
+    return () => clearInterval(interval);
+  }, [otpPurpose]);
 
+  // ---------------------------------------
+  // OTP input handlers
+  // ---------------------------------------
   const handleOtpChange = (index, value) => {
     if (value && !/^\d+$/.test(value)) return;
-    
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-    
-    if (error) setError('');
-    
-    if (value && index < 5) {
-      inputRefs.current[index + 1].focus();
-    }
+
+    if (value && index < 5) inputRefs.current[index + 1].focus();
+    if (error) setError("");
   };
 
   const handleKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1].focus();
     }
-    
-    if (e.key === 'v' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault();
-      handlePaste(e);
-    }
   };
 
-  const handlePaste = (e) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').trim();
-    
-    if (/^\d{6}$/.test(pastedData)) {
-      const pastedOtp = pastedData.split('');
-      const newOtp = [...otp];
-      
-      for (let i = 0; i < 6; i++) {
-        if (i < pastedOtp.length) {
-          newOtp[i] = pastedOtp[i];
-        }
-      }
-      
-      setOtp(newOtp);
-      inputRefs.current[5].focus();
-    }
-  };
-
-  // VERIFY OTP
+  // ---------------------------------------
+  // Verify OTP
+  // ---------------------------------------
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
-    const userId = localStorage.getItem(currentConfig.userIdKey);
-    if (!userId) {
-      setError('Session expired. Please restart the process.');
-      return;
-    }
+    const userId = localStorage.getItem(current.userIdKey);
+    if (!userId) return setError("Session expired. Please restart.");
 
-    if (otp.some(digit => digit === '')) {
-      setError('Please enter all 6 digits of the OTP');
-      return;
-    }
+    if (otp.some((d) => d === "")) return setError("Enter all 6 digits");
 
-    const otpString = otp.join('');
     setLoading(true);
 
     try {
-      const response = await fetch(
-        currentConfig.verifyEndpoint,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: Number(userId),
-            otp: otpString,
-          }),
-        }
-      );
+      const res = await fetch(current.verifyEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agtLoginId: Number(userId),
+          otp: otp.join(""),
+          purpose: otpPurpose,
+        }),
+      });
 
-      const data = await response.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Invalid OTP");
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Invalid OTP');
-      }
+      current.successAction(data);
+      current.cleanup();
 
-      // Perform type-specific success actions
-      currentConfig.successStorage(data);
-      currentConfig.storageCleanup();
-      
-      navigate(currentConfig.successRedirect);
-      
+      navigate(current.successRedirect);
     } catch (err) {
-      console.error('OTP verification error:', err);
-      setError(err.message || 'Failed to verify OTP');
-      setOtp(['', '', '', '', '', '']);
-      inputRefs.current[0].focus();
+      setError(err.message);
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
     } finally {
       setLoading(false);
     }
   };
 
-  // RESEND OTP
+  // ---------------------------------------
+  // Resend OTP
+  // ---------------------------------------
   const handleResendOtp = async () => {
-    const userId = localStorage.getItem(currentConfig.userIdKey);
-    if (!userId) {
-      setError('Session expired. Please restart the process.');
-      return;
-    }
+    const userId = localStorage.getItem(current.userIdKey);
+    if (!userId) return setError("Session expired");
 
     setResending(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch(
-        currentConfig.resendEndpoint,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: Number(userId) }),
-        }
-      );
+      const res = await fetch(current.resendEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agtLoginId: Number(userId), purpose: otpPurpose }),
+      });
 
-      const data = await response.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to resend");
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to resend OTP');
-      }
+      const newExpiry = data.expiresAt
+        ? new Date(data.expiresAt)
+        : new Date(Date.now() + 5 * 60 * 1000);
 
-      if (data.expiresAt) {
-        localStorage.setItem(currentConfig.expiryKey, data.expiresAt);
-      } else {
-        const newExpiry = new Date(Date.now() + 5 * 60 * 1000);
-        localStorage.setItem(currentConfig.expiryKey, newExpiry.toISOString());
-      }
+      localStorage.setItem(current.expiryKey, newExpiry.toISOString());
 
-      setTimeLeft(300);
-      setOtp(['', '', '', '', '', '']);
-      inputRefs.current[0].focus();
-
+      setTimeLeft(Math.floor((newExpiry.getTime() - Date.now()) / 1000));
+      setOtp(["", "", "", "", "", ""]);
+      setTimeout(() => inputRefs.current[0]?.focus(), 100);
     } catch (err) {
-      console.error('Resend OTP error:', err);
-      setError(err.message || 'Failed to resend OTP');
+      setError(err.message);
     } finally {
       setResending(false);
     }
   };
 
+  // Focus first input on load
   useEffect(() => {
-    if (inputRefs.current[0]) {
-      inputRefs.current[0].focus();
-    }
+    inputRefs.current[0]?.focus();
   }, []);
 
+  // ---------------------------------------
+  // UI
+  // ---------------------------------------
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        minHeight: '100vh',
-        width: '100vw',
-        background: 'white',
-        display: 'flex',
-        flexDirection: { xs: 'column', lg: 'row' },
-        border: 'none',
-        overflow: 'hidden'
-      }}
-    >
-      {/* Left Side - Image */}
+    <Paper sx={{ minHeight: "100vh", display: "flex" }}>
       <Box
         sx={{
-          width: { xs: '0%', lg: '60%' },
-          height: '100vh',
-          display: { xs: 'none', lg: 'flex' },
-          overflow: 'hidden'
+          width: { xs: "0%", lg: "60%" },
+          display: { xs: "none", lg: "flex" },
         }}
       >
-        <Box
-          component="img"
-          src={loginImage}
-          alt="OTP Verification"
-          sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
+        <img src={loginImage} alt="otp" style={{ width: "100%", height: "100%" }} />
       </Box>
 
-      {/* Right Side - Form */}
       <Box
         sx={{
-          width: { xs: '100%', lg: '40%' },
-          height: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          py: { xs: 0, lg: 0 }
+          width: { xs: "100%", lg: "40%" },
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          p: 4,
         }}
       >
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 4, sm: 5, md: 6 },
-            width: '100%',
-            maxWidth: { xs: '100%', sm: '450px', md: '500px' },
-            background: 'white',
-            borderRadius: { xs: 0, sm: '16px' },
-            height: { xs: '100%', sm: 'auto' },
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: { xs: 'center', sm: 'flex-start' }
-          }}
-        >
-          {/* Header */}
-          <Box sx={{ mb: 4, textAlign: 'center' }}>
-            <Typography
-              variant="h3"
-              component="h1"
-              sx={{ 
-                fontWeight: 700, 
-                color: '#212529', 
-                fontSize: { xs: '2rem', sm: '2.125rem', md: '2.25rem' }, 
-                lineHeight: 1.2,
-                textAlign: 'left',
-                mb: 1
-              }}
-            >
-              {currentConfig.title}
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{ 
-                color: '#212529', 
-                fontWeight: 500, 
-                fontSize: { xs: '1rem', sm: '1.05rem', md: '1.1rem' },
-                textAlign: 'left'
-              }}
-            >
-              {currentConfig.subtitle}
-            </Typography>
-          </Box>
+        <Box sx={{ width: "100%", maxWidth: 450 }}>
+          <Typography variant="h4" sx={{ mb: 1 }}>
+            OTP Verification
+          </Typography>
 
-          {/* Error Alert */}
+          <Typography sx={{ mb: 3, color: "#555" }}>
+            Enter the 6-digit code sent to your email
+          </Typography>
+
           {error && (
-            <Alert 
-              severity="error" 
-              sx={{ 
-                mb: 3, 
-                borderRadius: '8px',
-                '& .MuiAlert-message': { fontSize: '0.875rem' }
-              }}
-              onClose={() => setError('')}
-            >
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
               {error}
             </Alert>
           )}
 
-          {/* Form */}
-          <Box component="form" onSubmit={handleVerifyOtp} sx={{ width: '100%' }}>
-            {/* 6 OTP Input Boxes */}
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              mb: 3,
-              gap: 1
-            }}>
-              {[0, 1, 2, 3, 4, 5].map((index) => (
+          <form onSubmit={handleVerifyOtp}>
+            <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+              {otp.map((digit, i) => (
                 <TextField
-                  key={index}
-                  inputRef={el => inputRefs.current[index] = el}
-                  value={otp[index]}
-                  onChange={(e) => handleOtpChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  onPaste={handlePaste}
-                  disabled={loading || timeLeft <= 0}
+                  key={i}
+                  inputRef={(el) => (inputRefs.current[i] = el)}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(i, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(i, e)}
+                  disabled={loading}
                   inputProps={{
                     maxLength: 1,
-                    style: { 
-                      textAlign: 'center',
-                      fontSize: '1.5rem',
-                      fontWeight: 'bold'
-                    }
+                    style: { textAlign: "center", fontSize: "1.4rem" },
                   }}
-                  sx={{
-                    width: '55px',
-                    height: '60px',
-                    '& .MuiOutlinedInput-root': {
-                      height: '100%',
-                      '& fieldset': { 
-                        borderColor: otp[index] ? '#1C43A6' : '#dee2e6',
-                        borderWidth: otp[index] ? '2px' : '1px'
-                      },
-                      '&:hover fieldset': { borderColor: '#1C43A6' },
-                      '&.Mui-focused fieldset': { 
-                        borderColor: '#1C43A6',
-                        borderWidth: '2px'
-                      },
-                      '&.Mui-disabled fieldset': { 
-                        borderColor: '#e9ecef',
-                        backgroundColor: '#f8f9fa'
-                      }
-                    },
-                    '& .MuiInputBase-input': {
-                      textAlign: 'center',
-                      padding: '12px 8px',
-                    }
-                  }}
+                  sx={{ width: 55 }}
                 />
               ))}
             </Box>
 
-            {/* Timer */}
-            <Typography variant="caption" display="block" mb={2} sx={{ 
-              fontSize: '0.9rem',
-              color: timeLeft < 60 ? '#f44336' : '#6c757d'
-            }}>
-              Code expires in <span style={{ fontWeight: 'bold' }}>
-                {formatTime(timeLeft)}
-              </span>
+            <Typography sx={{ mb: 2, color: timeLeft < 60 ? "red" : "gray" }}>
+              Code expires in <b>{formatTime(timeLeft)}</b>
             </Typography>
 
-            {/* Resend Button */}
             <Button
               variant="text"
               onClick={handleResendOtp}
-              disabled={resending || timeLeft > 290}
-              sx={{ 
-                mb: 3,
-                color: '#1C43A6',
-                fontSize: '0.875rem',
-                textTransform: 'none',
-                fontWeight: 500,
-                '&:hover': { 
-                  backgroundColor: 'rgba(28, 67, 166, 0.04)',
-                  textDecoration: 'underline'
-                },
-                '&.Mui-disabled': {
-                  color: '#adb5bd'
-                }
-              }}
+              disabled={loading}
+              sx={{ mb: 3 }}
             >
-              {resending ? 'Sending...' : 'Resend Code'}
+              {resending ? "Sending..." : "Resend OTP"}
             </Button>
 
-            {/* Verify Button */}
             <Button
               type="submit"
               fullWidth
               variant="contained"
-              disabled={loading || timeLeft <= 0 || otp.some(digit => digit === '')}
-              sx={{
-                backgroundColor: '#1C43A6',
-                color: 'white',
-                py: 1.5,
-                fontSize: '1rem',
-                fontWeight: 500,
-                textTransform: 'none',
-                borderRadius: '8px',
-                '&:hover': { backgroundColor: '#15337D' },
-                '&:disabled': { backgroundColor: '#cccccc' },
-                mb: 3
-              }}
+              disabled={loading || otp.some((d) => d === "")}
+              sx={{ py: 1.5 }}
             >
               {loading ? (
-                <CircularProgress size={24} sx={{ color: 'white' }} />
-              ) : timeLeft <= 0 ? (
-                'Code Expired'
+                <CircularProgress size={24} sx={{ color: "white" }} />
               ) : (
-                'Verify & Continue'
+                "Verify & Continue"
               )}
             </Button>
 
-            {/* Back Link */}
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography
-                component={Link}
-                to={currentConfig.backLink}
-                sx={{
-                  color: '#1C43A6',
-                  textDecoration: 'none',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  '&:hover': { 
-                    textDecoration: 'underline', 
-                    color: '#15337D' 
-                  }
-                }}
-              >
-                ← {currentConfig.backText}
-              </Typography>
-            </Box>
-          </Box>
-        </Paper>
+            <Typography
+              component={Link}
+              to={current.backLink}
+              sx={{ display: "block", textAlign: "center", mt: 2 }}
+            >
+              ← Back
+            </Typography>
+          </form>
+        </Box>
       </Box>
     </Paper>
   );

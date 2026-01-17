@@ -48,8 +48,10 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/otp" element={<OtpPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/otp" element={<OtpPage mode="login" />} />
+<Route path="/forgot-password-otp" element={<OtpPage mode="forgot" />} />
+<Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
           <Route path="/forgot-password-otp" element={<OtpPage />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />
         </Routes>

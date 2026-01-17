@@ -89,7 +89,7 @@ const ForgotPasswordPage = () => {
       }
 
       // Save for OTP verification
-      localStorage.setItem("fp_userId", data.userId);
+      localStorage.setItem("fp_agtLoginId", data.agtLoginId);
       
       if (data.expiresAt) {
         localStorage.setItem("fp_expiry", data.expiresAt);
@@ -100,7 +100,7 @@ const ForgotPasswordPage = () => {
 
       localStorage.removeItem("resetToken");
       
-      // Navigate to OTP page (same component, different route)
+      // Navigate to OTP page
       navigate("/forgot-password-otp");
       
     } catch (err) {

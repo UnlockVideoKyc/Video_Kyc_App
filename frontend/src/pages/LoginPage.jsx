@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Paper,
@@ -12,11 +11,12 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import { VisibilityOff, Visibility, Email, Lock } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 
-// Import your images
 import loginImage from '../assets/login-bg.png';
 import wavingHand from '../assets/waving-hand.png';
 
@@ -30,16 +30,17 @@ const LoginPage = () => {
   });
   
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // New state for password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (field) => (event) => {
     setFormData(prev => ({
       ...prev,
       [field]: event.target.value
     }));
+    if (error) setError('');
   };
 
-  // Toggle password visibility
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
   };
@@ -48,55 +49,73 @@ const LoginPage = () => {
     event.preventDefault();
     
     if (!formData.email || !formData.password || !formData.role) {
-      alert('Please fill all fields');
+      setError('Please fill all fields');
+      return;
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
       return;
     }
 
     setLoading(true);
+    setError('');
 
     try {
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
           email: formData.email,
           password: formData.password
-          // Note: role might not be needed for auth, depends on your backend
         }),
       });
 
-      const data = await response.json();
-      
-      // Debug log
-      console.log('Login response:', data);
-      console.log('Has expiresAt?', 'expiresAt' in data);
-
-      if (response.ok) {
-        // ✅ Save userId for OTP verification
-        localStorage.setItem('userId', data.userId);
-
-        // ✅ Save OTP expiry time from backend
-        if (data.expiresAt) {
-          localStorage.setItem('otpExpiry', data.expiresAt);
-          console.log('OTP expiry saved from backend:', data.expiresAt);
-        } else {
-          // Fallback: set 5 minutes from now
-          const fallbackExpiry = new Date(Date.now() + 5 * 60 * 1000);
-          localStorage.setItem('otpExpiry', fallbackExpiry.toISOString());
-          console.log('Using fallback expiry (5 min from now):', fallbackExpiry.toISOString());
-        }
-
-        // ✅ Clear any old token
-        localStorage.removeItem('token');
-        
-        // ✅ Redirect to OTP page
-        navigate('/otp');
-      } else {
-        alert(data.message || 'Login failed. Please check your credentials.');
+      // Check if response is JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        console.error("Non-JSON response:", text.substring(0, 200));
+        throw new Error("Server returned an unexpected response.");
       }
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed. Please check your credentials.');
+      }
+
+      // ✅ Save agtLoginId for OTP verification
+      localStorage.setItem('agtLoginId', data.agtLoginId);
+
+      // ✅ Get OTP expiry from backend
+      if (data.expiresAt) {
+        localStorage.setItem('otpExpiry', data.expiresAt);
+      } else {
+        // Fallback: set 5 minutes from now
+        const fallbackExpiry = new Date(Date.now() + 5 * 60 * 1000);
+        localStorage.setItem('otpExpiry', fallbackExpiry.toISOString());
+      }
+
+      // ✅ Clear any old token
+      localStorage.removeItem('token');
+      
+      // ✅ Redirect to OTP page
+      navigate('/otp');
+      
     } catch (error) {
       console.error('Login error:', error);
-      alert('Network error. Please check your connection and try again.');
+      
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        setError('Cannot connect to server. Please check if backend is running on localhost:5000');
+      } else {
+        setError(error.message || 'Network error. Please check your connection and try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -195,6 +214,21 @@ const LoginPage = () => {
             </Typography>
           </Box>
 
+          {/* Error Alert */}
+          {error && (
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3, 
+                borderRadius: '8px',
+                '& .MuiAlert-message': { fontSize: '0.875rem' }
+              }}
+              onClose={() => setError('')}
+            >
+              {error}
+            </Alert>
+          )}
+
           {/* Form */}
           <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
             <TextField
@@ -225,12 +259,13 @@ const LoginPage = () => {
                   </InputAdornment>
                 ),
               }}
+              helperText="Enter your registered email address"
             />
 
             <TextField
               fullWidth
               label="Enter your Password"
-              type={showPassword ? 'text' : 'password'} // Toggle between text and password
+              type={showPassword ? 'text' : 'password'}
               variant="outlined"
               value={formData.password}
               onChange={handleChange('password')}
@@ -313,7 +348,7 @@ const LoginPage = () => {
                 mb: 2
               }}
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : 'Login'}
             </Button>
 
             <Box sx={{ textAlign: 'center' }}>

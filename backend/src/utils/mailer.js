@@ -10,14 +10,29 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-
 const sendOTP = async (email, otp) => {
   try {
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: `"DigiKhata" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Your DigiKhata Login OTP",
-      html: `<h2>Your OTP is: ${otp}</h2><p>This OTP is valid for 10 minutes.</p>`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2>Your One-Time Password (OTP)</h2>
+          <p>Use the following OTP to complete your login:</p>
+          <div style="background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 24px; letter-spacing: 5px; margin: 20px 0;">
+            <strong>${otp}</strong>
+          </div>
+          <p>This OTP is valid for <strong>5 minutes</strong>.</p>
+          <p>If you didn't request this OTP, please ignore this email.</p>
+          <br>
+          <p>Best regards,<br><strong>DigiKhata Team</strong></p>
+          <hr>
+          <p style="font-size:12px;color:#777">
+            This is an automated message. Please do not reply.
+          </p>
+        </div>
+      `,
     });
     console.log(`OTP sent to ${email}`);
   } catch (error) {
@@ -32,9 +47,8 @@ const sendPasswordResetConfirmation = async (email) => {
       from: `"DigiKhata" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Password Reset Successful - DigiKhata",
-      text: "Your DigiKhata password has been successfully reset. If you did not request this, contact support immediately.",
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2>Password Reset Successful</h2>
           <p>Hello,</p>
           <p>Your DigiKhata password has been successfully reset.</p>
@@ -46,9 +60,8 @@ const sendPasswordResetConfirmation = async (email) => {
             This is an automated message. Please do not reply.
           </p>
         </div>
-      `
+      `,
     });
-
     console.log(`Password reset confirmation email sent to ${email}`);
   } catch (error) {
     console.error("Error sending password reset confirmation email:", error);
@@ -56,8 +69,7 @@ const sendPasswordResetConfirmation = async (email) => {
   }
 };
 
-
 module.exports = {
   sendOTP,
-  sendPasswordResetConfirmation
+  sendPasswordResetConfirmation,
 };

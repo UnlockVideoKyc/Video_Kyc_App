@@ -1,12 +1,17 @@
 const router = require("express").Router();
-const controller = require("../controllers/auth.controller");
+const authController = require("../controllers/auth.controller");
 
-router.post("/login", controller.login);
-router.post("/verify-otp", controller.verifyOtp);
-router.post("/resend-otp", controller.resendOtp);
-router.post("/forgot-password", controller.forgotPassword);
-router.post("/verify-forgot-otp", controller.verifyForgotOtp);
-router.post("/reset-password", controller.resetPassword);
+// Authentication routes
+router.post("/login", authController.login);
+router.post("/verify-otp", authController.verifyOtp);
+router.post("/resend-otp", authController.resendOtp);
 
+// Password reset routes
+router.post("/forgot-password", authController.forgotPassword);
+router.post("/verify-forgot-otp", authController.verifyForgotOtp);
+router.post("/reset-password", authController.resetPassword);
+
+// Utility route (for testing/development)
+router.post("/hash-password", authController.hashPassword);
 
 module.exports = router;

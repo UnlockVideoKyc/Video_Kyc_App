@@ -1,60 +1,63 @@
 const db = require("../config/db");
 
-const OTP_EXPIRY_SECONDS = 100;
-
-exports.create = async (userId, otp) => {
+exports.create = async (agtLoginId, otp, purpose) => {
   await db.query(
-    `
-    INSERT INTO login_otps (user_id, otp, expires_at, is_used)
-    VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), 0)
-    `,
-    [userId, otp, OTP_EXPIRY_SECONDS]
+    `INSERT INTO OTP (AgtLoginId, OneTimePassword, Purpose, ExpiresAt, IsUsed, CreatedOn) 
+     VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 5 MINUTE), 0, NOW())`,
+    [agtLoginId, otp, purpose]
   );
 };
 
-exports.verify = async (userId, otp) => {
+
+exports.verify = async (agtLoginId, otp, purpose) => {
   const [rows] = await db.query(
-    `
-    SELECT id
-    FROM login_otps
-    WHERE user_id = ?
-      AND otp = ?
-      AND is_used = 0
-      AND expires_at > NOW()
-    ORDER BY created_at DESC
-    LIMIT 1
-    `,
-    [userId, otp]
+    `SELECT OtpId FROM OTP 
+     WHERE AgtLoginId = ?
+     AND OneTimePassword = ?
+     AND Purpose = ?
+     AND IsUsed = 0
+     AND ExpiresAt > NOW()
+     ORDER BY CreatedOn DESC LIMIT 1`,
+    [agtLoginId, otp, purpose]
   );
 
   if (!rows.length) return false;
 
   await db.query(
-    `UPDATE login_otps SET is_used = 1 WHERE id = ?`,
-    [rows[0].id]
+    `UPDATE OTP SET IsUsed = 1 WHERE OtpId = ?`,
+    [rows[0].OtpId]
   );
 
   return true;
 };
 
-exports.invalidateAll = async (userId) => {
+exports.invalidateAll = async (agtLoginId, purpose) => {
   await db.query(
-    `UPDATE login_otps SET is_used = 1 WHERE user_id = ?`,
-    [userId]
+    `UPDATE OTP SET IsUsed = 1 
+     WHERE AgtLoginId = ? AND Purpose = ? AND IsUsed = 0`,
+    [agtLoginId, purpose]
   );
 };
 
-exports.getLatestExpiry = async (userId) => {
+
+// otp.repo.js
+
+exports.getLatestExpiry = async (agtLoginId, purpose) => {
   const [rows] = await db.query(
-    `
-    SELECT expires_at
-    FROM login_otps
-    WHERE user_id = ?
-    ORDER BY created_at DESC
-    LIMIT 1
-    `,
-    [userId]
+    `SELECT ExpiresAt FROM OTP 
+     WHERE AgtLoginId = ? AND Purpose = ?
+     ORDER BY CreatedOn DESC LIMIT 1`,
+    [agtLoginId, purpose]
   );
 
-  return rows.length ? rows[0].expires_at : null;
+  return rows.length ? rows[0].ExpiresAt : null;
+};
+
+
+
+
+exports.deleteExpiredOtps = async () => {
+  await db.query(
+    `DELETE FROM OTP WHERE ExpiresAt < NOW() AND IsUsed = 0`
+  );
 };
