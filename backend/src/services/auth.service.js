@@ -147,3 +147,69 @@ exports.resetPassword = async (resetToken, newPassword) => {
 exports.hashPassword = async (plainPassword) => {
   return await bcrypt.hash(plainPassword, 10);
 };
+
+
+
+
+exports.getDateRange = (filter) => {
+  if (filter === "all") return null;
+
+  const start = new Date();
+  const end = new Date();
+
+  if (filter === "today") {
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+  }
+
+  if (filter === "week") {
+    const day = start.getDay();
+    start.setDate(start.getDate() - day);
+    start.setHours(0, 0, 0, 0);
+
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+  }
+
+  if (filter === "month") {
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
+
+    end.setMonth(end.getMonth() + 1);
+    end.setDate(0);
+    end.setHours(23, 59, 59, 999);
+  }
+
+  return { start, end };
+};
+
+
+exports.getDashboardData = async (filter) => {
+  const { start, end } = getDateRange(filter);
+
+  const approved = await dashboardRepo.countByStatus(
+    "APPROVED",
+    start,
+    end
+  );
+
+  const rejected = await dashboardRepo.countByStatus(
+    "REJECTED",
+    start,
+    end
+  );
+
+  const discrepancy = await dashboardRepo.countByStatus(
+    "DISCREPANCY",
+    start,
+    end
+  );
+
+  return {
+    label: filter,
+    total: approved + rejected + discrepancy,
+    approved,
+    rejected,
+    discrepancy,
+  };
+};
