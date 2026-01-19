@@ -29,7 +29,7 @@ const Header = () => {
 
   // ⭐ LOAD PROFILE ONCE ON PAGE LOAD + AFTER LOGIN
   useEffect(() => {
-    // Load cached profile first
+    // Load cached profile firs
     const savedProfile = localStorage.getItem("profile");
     if (savedProfile) {
       setProfile(JSON.parse(savedProfile));
