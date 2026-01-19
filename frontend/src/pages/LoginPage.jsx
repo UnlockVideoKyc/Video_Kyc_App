@@ -64,7 +64,7 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ const LoginPage = () => {
       console.error('Login error:', error);
       
       if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        setError('Cannot connect to server. Please check if backend is running on localhost:5000');
+        setError(`Cannot connect to server. Please check if backend is running on ${import.meta.env.VITE_API_BASE_URL}`);
       } else {
         setError(error.message || 'Network error. Please check your connection and try again.');
       }

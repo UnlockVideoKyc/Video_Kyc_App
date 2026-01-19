@@ -53,8 +53,8 @@ const OtpPage = () => {
     LOGIN: {
       userIdKey: "agtLoginId",
       expiryKey: "otpExpiry",
-      verifyEndpoint: "http://localhost:5000/api/auth/verify-otp",
-      resendEndpoint: "http://localhost:5000/api/auth/resend-otp",
+      verifyEndpoint: `${import.meta.env.VITE_API_BASE_URL}/api/auth/verify-otp`,
+      resendEndpoint: `${import.meta.env.VITE_API_BASE_URL}/api/auth/resend-otp`,
       successRedirect: "/work-dashboard",
       backLink: "/login",
       successAction: (data) => localStorage.setItem("token", data.token),
@@ -66,8 +66,8 @@ const OtpPage = () => {
     FORGOT: {
       userIdKey: "fp_agtLoginId",
       expiryKey: "fp_expiry",
-      verifyEndpoint: "http://localhost:5000/api/auth/verify-forgot-otp",
-      resendEndpoint: "http://localhost:5000/api/auth/resend-otp",
+      verifyEndpoint: `${import.meta.env.VITE_API_BASE_URL}/api/auth/verify-forgot-otp`,
+      resendEndpoint: `${import.meta.env.VITE_API_BASE_URL}/api/auth/resend-otp`,
       successRedirect: "/change-password",
       backLink: "/forgot-password",
       successAction: (data) => localStorage.setItem("resetToken", data.resetToken),

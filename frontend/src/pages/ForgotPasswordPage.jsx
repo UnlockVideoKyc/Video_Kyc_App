@@ -54,7 +54,7 @@ const ForgotPasswordPage = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/auth/forgot-password",
+        `${import.meta.env.VITE_API_BASE_URL}/api/auth/forgot-password`,
         {
           method: "POST",
           headers: { 
@@ -108,7 +108,7 @@ const ForgotPasswordPage = () => {
       
       // User-friendly error messages
       if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
-        setError("Cannot connect to server. Please check if backend is running on localhost:5000");
+        setError(`Cannot connect to server. Please check if backend is running on ${import.meta.env.VITE_API_BASE_URL}`);
       } else {
         setError(err.message || "Something went wrong. Please try again.");
       }

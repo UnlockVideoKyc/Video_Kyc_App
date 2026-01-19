@@ -83,7 +83,7 @@ const handleSubmit = async (event) => {
   setLoading(true);
 
   try {
-    const response = await fetch("http://localhost:5000/api/agent/change-password", {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/agent/change-password`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
