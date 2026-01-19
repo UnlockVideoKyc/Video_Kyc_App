@@ -20,6 +20,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import OtpPage from "./pages/OtpPage";
 
+
 function AppContent() {
   const location = useLocation();
 

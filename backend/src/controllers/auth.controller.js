@@ -1,5 +1,6 @@
 const authService = require("../services/auth.service");
 
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body; // Changed from agentUserId to email
@@ -156,14 +157,6 @@ exports.hashPassword = async (req, res) => {
     
   } catch (err) {
     console.error("Hash password error:", err);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-exports.logout = async (req, res) => {
-  try {
-    return res.json({ message: "Logged out successfully" });
-  } catch (err) {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
