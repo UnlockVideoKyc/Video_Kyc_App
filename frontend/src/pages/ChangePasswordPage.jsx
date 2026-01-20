@@ -26,10 +26,12 @@ const ChangePasswordPage = () => {
     confirmPassword: false,
   });
 
-  const [formData, setFormData] = useState({
-    newPassword: "",
-    confirmPassword: "",
-  });
+ const [formData, setFormData] = useState({
+  oldPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+});
+
 
   const handleChange = (field) => (event) => {
     setFormData((prev) => ({
@@ -50,77 +52,69 @@ const ChangePasswordPage = () => {
   };
 
   // Handle password change
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError("");
-    setSuccess("");
+const handleSubmit = async (event) => {
+  event.preventDefault();
+  setError("");
+  setSuccess("");
 
-    // Validation
-    if (!formData.newPassword || !formData.confirmPassword) {
-      setError("Please fill in all fields");
-      return;
+  // Validation
+  if (!formData.oldPassword || !formData.newPassword || !formData.confirmPassword) {
+    setError("Please fill in all fields");
+    return;
+  }
+
+  if (formData.newPassword.length < 6) {
+    setError("Password must be at least 6 characters long");
+    return;
+  }
+
+  if (formData.newPassword !== formData.confirmPassword) {
+    setError("Passwords do not match");
+    return;
+  }
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    setError("You are not logged in. Please login again.");
+    setTimeout(() => navigate("/login"), 2000);
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const response = await fetch(`http://localhost:5000/api/agent/change-password`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        oldPassword: formData.oldPassword,
+        newPassword: formData.newPassword,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to change password");
     }
 
-    if (formData.newPassword.length < 6) {
-      setError("Password must be at least 6 characters long");
-      return;
-    }
+    setSuccess("Password changed successfully!");
 
-    if (formData.newPassword !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
+    // Redirect after success
+    setTimeout(() => {
+      navigate("/work-dashboard");
+    }, 1500);
 
-    const resetToken = localStorage.getItem("resetToken");
-    if (!resetToken) {
-      setError("Session expired. Please restart the password reset process.");
-      setTimeout(() => navigate("/forgot-password"), 2000);
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/auth/reset-password",
-        {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${resetToken}`
-          },
-          body: JSON.stringify({
-            newPassword: formData.newPassword,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to reset password");
-      }
-
-      // Success
-      setSuccess("Password changed successfully! Redirecting to login...");
-      
-      // Clear local storage
-      localStorage.removeItem("resetToken");
-      localStorage.removeItem("fp_userId");
-      localStorage.removeItem("fp_expiry");
-      
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
-
-    } catch (err) {
-      console.error("Change password error:", err);
-      setError(err.message || "Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err) {
+    console.error("Change password error:", err);
+    setError(err.message || "Something went wrong. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Paper
@@ -246,6 +240,26 @@ const ChangePasswordPage = () => {
 
           {/* Form */}
           <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
+            {/* Old Password */}
+<TextField
+  fullWidth
+  label="Old Password"
+  type="password"
+  variant="outlined"
+  value={formData.oldPassword || ""}
+  onChange={handleChange("oldPassword")}
+  required
+  disabled={loading}
+  sx={{ mb: 3 }}
+  InputProps={{
+    startAdornment: (
+      <InputAdornment position="start">
+        <Lock sx={{ color: "#6c757d" }} />
+      </InputAdornment>
+    )
+  }}
+/>
+
             {/* New Password */}
             <TextField
               fullWidth

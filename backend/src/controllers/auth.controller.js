@@ -1,5 +1,6 @@
 const authService = require("../services/auth.service");
 
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body; // Changed from agentUserId to email

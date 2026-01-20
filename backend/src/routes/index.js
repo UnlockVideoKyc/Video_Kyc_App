@@ -3,6 +3,9 @@ const router = require("express").Router();
 // Main API routes
 router.use("/auth", require("./auth.routes"));
 
+router.use("/agent", require("./agent.routes"));
+
+
 // Health check route
 router.get("/health", (req, res) => {
   res.json({ 
