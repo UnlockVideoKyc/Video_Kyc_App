@@ -34,15 +34,16 @@ const OtpPage = () => {
   // ---------------------------------------
   // Detect LOGIN or FORGOT mode
   // ---------------------------------------
-  const detectMode = () => {
-    const fp = localStorage.getItem("fp_agtLoginId");
-    const login = localStorage.getItem("agtLoginId");
+const detectMode = () => {
+  // If you are on forgot-password OTP route → always FORGOT
+  if (location.pathname.includes("forgot-password-otp")) {
+    return "FORGOT";
+  }
 
-    if (fp && !login) return "FORGOT";
-    if (login && !fp) return "LOGIN";
+  // Otherwise → LOGIN
+  return "LOGIN";
+};
 
-    return location.pathname.includes("forgot") ? "FORGOT" : "LOGIN";
-  };
 
   const otpPurpose = detectMode();
 
@@ -68,7 +69,7 @@ const OtpPage = () => {
       expiryKey: "fp_expiry",
       verifyEndpoint: `http://localhost:5000/api/auth/verify-forgot-otp`,
       resendEndpoint: `http://localhost:5000/api/auth/resend-otp`,
-      successRedirect: "/change-password",
+      successRedirect: "/reset-password",
       backLink: "/forgot-password",
       successAction: (data) => localStorage.setItem("resetToken", data.resetToken),
       cleanup: () => {

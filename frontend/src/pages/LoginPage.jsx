@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Paper,
   Box,
@@ -20,6 +20,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import loginImage from '../assets/login-bg.png';
 import wavingHand from '../assets/waving-hand.png';
 
+
+
 const LoginPage = () => {
   const navigate = useNavigate();
   
@@ -32,6 +34,12 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+
+   useEffect(() => {
+  localStorage.removeItem("agtLoginId"); 
+  localStorage.removeItem("otpExpiry"); 
+  localStorage.removeItem("token"); 
+}, []);
 
   const handleChange = (field) => (event) => {
     setFormData(prev => ({
@@ -52,6 +60,7 @@ const LoginPage = () => {
       setError('Please fill all fields');
       return;
     }
+   
 
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

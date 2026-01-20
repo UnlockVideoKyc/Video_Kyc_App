@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import {
   Paper,
   Box,
@@ -11,9 +12,10 @@ import {
 } from "@mui/material";
 import { Email, CalendarToday } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
-
 import loginImage from "../assets/login-bg.png";
 import wavingHand from "../assets/waving-hand.png";
+
+
 
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
@@ -24,6 +26,7 @@ const ForgotPasswordPage = () => {
     email: "",
     dateOfBirth: "",
   });
+
 
   const handleChange = (field) => (event) => {
     setFormData((prev) => ({
