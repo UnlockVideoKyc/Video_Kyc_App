@@ -3,7 +3,7 @@ import { Phone } from "lucide-react";
 import StatusIndicator from "./StatusIndicator";
 import { useEffect, useState } from "react";
 
-const LiveScheduleTable = ({ customers = [] }) => {
+const LiveScheduleTable = ({ customers = [], onInitiateCall }) => {
   const [, setTick] = useState(0);
 
   // re-render every second
@@ -72,6 +72,7 @@ const LiveScheduleTable = ({ customers = [] }) => {
                     textTransform: "none",
                     boxShadow: "none",
                   }}
+                  onClick={() => onInitiateCall(customers)}
                 >
                   Initiate Call
                 </Button>

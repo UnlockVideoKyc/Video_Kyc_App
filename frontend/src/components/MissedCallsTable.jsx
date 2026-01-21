@@ -2,7 +2,7 @@ import { Button } from "@mui/material";
 import { Phone, MessageCircle } from "lucide-react";
 import StatusIndicator from "./StatusIndicator";
 
-const MissedCallsTable = ({ customers }) => {
+const MissedCallsTable = ({ customers, onInitiateCall  }) => {
   return (
     <div className="table-responsive">
       <table className="table table-hover">
@@ -73,6 +73,7 @@ const MissedCallsTable = ({ customers }) => {
                     textTransform: "none",
                     boxShadow: "none",
                   }}
+                  onClick={() => onInitiateCall(customers)}
                 >
                   Initiate Call
                 </Button>
