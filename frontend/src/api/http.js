@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5000/api/auth";
+const BASE_URL = "http://localhost:5000/api";
 
 const apiFetch = async (url, options = {}) => {
   const response = await fetch(`${BASE_URL}${url}`, {

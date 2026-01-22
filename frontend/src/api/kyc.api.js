@@ -1,7 +1,7 @@
-import apiFetch from "./http"; 
+import apiFetch from "./http";
 
-const getPastKycCalls = () => {
-  return apiFetch("/past"); 
-};
+ const getPastKycCalls = () =>
+  apiFetch("/auth/past");
+
 
 export default getPastKycCalls;
