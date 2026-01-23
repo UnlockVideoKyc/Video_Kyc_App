@@ -218,7 +218,7 @@ const CustomerTable = () => {
           />
 
          
-          <Tab
+          {/* <Tab
             value="Draft List"
             icon={<EditNoteIcon fontSize="small" />}
             iconPosition="start"
@@ -238,7 +238,7 @@ const CustomerTable = () => {
                 fontWeight: 500,
               },
             }}
-          />
+          /> */}
         </Tabs>
 
         <Box sx={{ borderBottom: 1, borderColor: "divider", my: 3 }} />
@@ -312,14 +312,14 @@ const CustomerTable = () => {
           </Box>
         )}
 
-        {activeTab === "Draft List" && (
+        {/* {activeTab === "Draft List" && (
           <Box sx={{ mt: 2, p: 3, textAlign: "center" }}>
             <Typography variant="h5">Draft List</Typography>
             <Typography color="text.secondary">
               This page is under development.
             </Typography>
           </Box>
-        )}
+        )} */}
 
         {selectedCustomer && (
           <CallInitiationModal
