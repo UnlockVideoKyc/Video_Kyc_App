@@ -99,7 +99,10 @@ exports.searchLiveKyc = async (query) => {
   return rows;
 };
 
+
 exports.searchMissedKyc = async (query) => {
+  const like = `%${query}%`;
+
   const [rows] = await db.execute(`
     SELECT
       m.MissedId,
@@ -113,11 +116,91 @@ exports.searchMissedKyc = async (query) => {
       m.CreatedAt
     FROM Missed_Calls_Kyc m
     JOIN Video_Kyc_Waitlist w ON w.WaitlistId = m.WaitlistId
-    WHERE w.CustomerName LIKE ?
-       OR w.VcipId LIKE ?
+    WHERE
+      w.CustomerName LIKE ?
+      OR w.ClientName LIKE ?
+      OR w.VcipId LIKE ?
+      OR m.MobileNumber LIKE ?
+      OR m.Remark LIKE ?
     ORDER BY m.MissedDateTime DESC
-  `, [`%${query}%`, `%${query}%`]);
+  `, [like, like, like, like, like]);
 
   return rows;
 };
 
+
+exports.searchPastKyc = async (query) => {
+  const likeQuery = `%${query}%`;
+
+  const [rows] = await db.query(
+    `
+    SELECT 
+      pkc.PastKycId,
+      vk.CustomerName AS customerName,
+      vk.ClientName AS clientName,
+      pkc.VcipId AS vcipId,
+      pkc.ConnectionId AS connectionId,
+      pkc.CallStatus AS callStatus,
+      pkc.CreatedAt
+    FROM Past_Kyc_Calls pkc
+    LEFT JOIN Video_Kyc_Waitlist vk
+      ON vk.WaitlistId = pkc.WaitlistId
+    WHERE 
+      COALESCE(vk.CustomerName, '') LIKE ?
+      OR COALESCE(vk.ClientName, '') LIKE ?
+      OR pkc.VcipId LIKE ?
+      OR pkc.ConnectionId LIKE ?
+      OR pkc.CallStatus LIKE ?
+    ORDER BY pkc.CreatedAt DESC
+    `,
+    [
+      likeQuery,
+      likeQuery,
+      likeQuery,
+      likeQuery,
+      likeQuery
+    ]
+  );
+
+  return rows;
+};
+
+
+
+
+// exports.searchPastKyc = async (query) => {
+//   const likeQuery = `%${query}%`;
+
+//   const [rows] = await db.query(
+//     `
+//     SELECT 
+//       pkc.PastKycId,
+//       vk.CustomerName AS customerName,
+//       vk.ClientName AS clientName,
+//       vk.MobileNumber, 
+//       pkc.VcipId AS vcipId,
+//       pkc.ConnectionId AS connectionId,
+//       pkc.CallStatus AS callStatus,
+//       pkc.CreatedAt
+//     FROM Past_Kyc_Calls pkc
+//     LEFT JOIN Video_Kyc_Waitlist vk
+//       ON vk.WaitlistId = pkc.WaitlistId
+//     WHERE 
+//       COALESCE(vk.CustomerName, '') LIKE ?
+//       OR COALESCE(vk.ClientName, '') LIKE ?
+//       OR pkc.VcipId LIKE ?
+//       OR pkc.ConnectionId LIKE ?
+//       OR pkc.CallStatus LIKE ?
+//     ORDER BY pkc.CreatedAt DESC
+//     `,
+//     [
+//       likeQuery,
+//       likeQuery,
+//       likeQuery,
+//       likeQuery,
+//       likeQuery
+//     ]
+//   );
+
+//   return rows;
+// };

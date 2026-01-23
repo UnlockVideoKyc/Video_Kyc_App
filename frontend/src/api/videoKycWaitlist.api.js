@@ -1,34 +1,3 @@
-// const BASE_URL = "http://localhost:5000/api/kyc";
-
-// const handleResponse = async (res) => {
-//   if (!res.ok) {
-//     const error = await res.text();
-//     throw new Error(error || "API Error");
-//   }
-//   return res.json();
-// };
-
-// export const getLiveSchedule = async () => {
-//   const res = await fetch(`${BASE_URL}/live-schedule`);
-//   return handleResponse(res);
-// };
-
-// export const getMissedCalls = async () => {
-//   const res = await fetch(`${BASE_URL}/missed`);
-//   return handleResponse(res);
-// };
-
-// export const searchKyc = async (query) => {
-//   const res = await fetch(`${BASE_URL}/search?q=${encodeURIComponent(query)}`);
-//   return handleResponse(res);
-// };
-
-// export const refreshDashboard = async () => {
-//   const res = await fetch(`${BASE_URL}/refresh`);
-//   return handleResponse(res);
-// };
-
-
 const BASE_URL = "http://localhost:5000/api/kyc";
 
 const handleResponse = async (res) => {
@@ -49,12 +18,23 @@ const getMissedCalls = async () => {
   return handleResponse(res);
 };
 
-const searchKyc = async (query) => {
+// videoKycWaitlist.api.js
+ const searchMissedKyc = async (query) => {
   const res = await fetch(
-    `${BASE_URL}/search?q=${encodeURIComponent(query)}`
+    `${BASE_URL}/search-missed?q=${encodeURIComponent(query)}`
   );
-  return handleResponse(res);
+  return res.json();
 };
+
+
+const searchKyc = async (query, view = "live") => {
+  return handleResponse(
+    await fetch(
+      `${BASE_URL}/search?q=${encodeURIComponent(query)}&view=${view}`
+    )
+  );
+};
+
 
 const refreshDashboard = async () => {
   const res = await fetch(`${BASE_URL}/refresh`);
@@ -64,7 +44,8 @@ const refreshDashboard = async () => {
 /* ✅ NAMED EXPORTS */
 export {
   getLiveSchedule,
-  getMissedCalls,
+  searchMissedKyc,
   searchKyc,
   refreshDashboard,
+  getMissedCalls
 };

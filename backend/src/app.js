@@ -6,11 +6,26 @@ const routes = require("./routes");
 
 const app = express();
 
-// Enable CORS for all origins (development only)
-app.use(cors({
-  origin: `http://localhost:5173`, // Allow all origins
-  credentials: true
-}));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5000",
+];
+
+// CORS configuration
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS: Origin not allowed"));
+      }
+    },
+    credentials: true,
+  })
+);
 
 // Middleware
 app.use(express.json());
@@ -18,7 +33,11 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging
 app.use((req, res, next) => {
-  console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.path} - Origin: ${req.headers.origin || 'None'}`);
+  console.log(
+    `[${new Date().toLocaleTimeString()}] ${req.method} ${req.path} - Origin: ${
+      req.headers.origin || "None"
+    }`
+  );
   next();
 });
 
@@ -27,10 +46,10 @@ app.use("/api", routes);
 
 // Health check
 app.get("/", (req, res) => {
-  res.json({ 
+  res.json({
     success: true,
     message: "DigiKhata Backend API",
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -39,17 +58,17 @@ app.use((req, res) => {
   res.status(404).json({
     success: false,
     error: "Not Found",
-    message: `Cannot ${req.method} ${req.path}`
+    message: `Cannot ${req.method} ${req.path}`,
   });
 });
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error("Server Error:", err);
+  console.error("Server Error:", err.message);
   res.status(500).json({
     success: false,
     error: "Internal Server Error",
-    message: err.message
+    message: err.message,
   });
 });
 

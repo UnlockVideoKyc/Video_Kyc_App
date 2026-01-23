@@ -20,6 +20,26 @@ exports.getVideoKycWaitlist = async (req, res) => {
   }
 };
 
+exports.searchMissedKyc = async (req, res) => {
+  try {
+    const query = (req.query.q || "").trim();
+    if (query.length < 2) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const data = await kycRepo.searchMissedKyc(query);
+
+    res.status(200).json({
+      success: true,
+      count: data.length,
+      data,
+    });
+  } catch (err) {
+    console.error("Search Missed Error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 
 exports.getLiveScheduleKyc = async (req, res) => {
   try {
@@ -99,5 +119,34 @@ exports.refreshDashboard = async (req, res) => {
   } catch (err) {
     console.error("Refresh Error:", err);
     res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+
+exports.searchPastKyc = async (req, res) => {
+  try {
+    const q = (req.query.q || "").trim();
+
+    if (q.length < 2) {
+      return res.status(200).json({
+        success: true,
+        data: []
+      });
+    }
+
+    const data = await kycRepo.searchPastKyc(q);
+
+    res.status(200).json({
+      success: true,
+      count: data.length,
+      data
+    });
+  } catch (err) {
+    console.error("Past KYC Search Error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
   }
 };

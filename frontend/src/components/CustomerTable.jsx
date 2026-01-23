@@ -1,345 +1,3 @@
-// import { useEffect, useState, useCallback } from "react";
-// import PastKycCallsTable from "../pages/AgentDashboard/PastKycCallsTable";
-
-// import {
-//   Box,
-//   Tabs,
-//   Tab,
-//   // useMediaQuery,
-//   // useTheme,
-//   InputAdornment,
-//   TextField,
-//   Typography,
-// } from "@mui/material";
-
-// import {
-//   Groups as GroupsIcon,
-//   History as HistoryIcon,
-//   EditNote as EditNoteIcon,
-//   Search as SearchIcon,
-// } from "@mui/icons-material";
-
-// import ActionButtons from "../components/ActionButtons";
-// import LiveScheduleTable from "./LiveScheduleTable";
-// import MissedCallsTable from "../components/MissedCallsTable";
-// import Pagination from "../components/Pagination";
-// import CallInitiationModal from "../components/CallInitiationModal";
-// import CallEndModal from "../components/CallEndModal";
-
-// /* ---------------- debounce hook ---------------- */
-// const useDebounce = (value, delay = 400) => {
-//   const [debounced, setDebounced] = useState(value);
-
-//   useEffect(() => {
-//     const t = setTimeout(() => setDebounced(value), delay);
-//     return () => clearTimeout(t);
-//   }, [value, delay]);
-
-//   return debounced;
-// };
-
-// const CustomerTable = () => {
-//   // const theme = useTheme();
-//   // const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-//   const [activeTab, setActiveTab] = useState("Video KYC Waitlist");
-//   const [activeView, setActiveView] = useState("live");
-
-//   const [customers, setCustomers] = useState([]);
-//   const [loading, setLoading] = useState(false);
-
-//   const [search, setSearch] = useState("");
-//   const debouncedSearch = useDebounce(search);
-
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const itemsPerPage = 3;
-
-//   const [initiationModalOpen, setInitiationModalOpen] = useState(false);
-//   const [endModalOpen, setEndModalOpen] = useState(false);
-//   const [selectedCustomer, setSelectedCustomer] = useState(null);
-
-//   /* COUNTS (FIX #2) */
-//   const [liveCount, setLiveCount] = useState(0);
-//   const [missedCount, setMissedCount] = useState(0);
-
-//   const API_BASE = "http://localhost:5000/api/kyc";
-
-//   const fetchData = useCallback(async () => {
-//     setLoading(true);
-//     try {
-//       let url = "";
-
-//       if (debouncedSearch) {
-//         url = `${API_BASE}/search?q=${debouncedSearch}&view=${activeView}`;
-//       } else if (activeView === "live") {
-//         url = `${API_BASE}/live-schedule`;
-//       } else {
-//         url = `${API_BASE}/missed`;
-//       }
-
-//       const res = await fetch(url);
-//       const json = await res.json();
-
-//       setCustomers(json.data || []);
-
-//       if (activeView === "live") {
-//         setLiveCount(json.totalCount ?? json.data?.length ?? 0);
-//       } else {
-//         setMissedCount(json.totalCount ?? json.data?.length ?? 0);
-//       }
-//     } catch (err) {
-//       console.error(err);
-//       setCustomers([]);
-//     } finally {
-//       setLoading(false);
-//     }
-//   }, [API_BASE, debouncedSearch, activeView]);
-
-//   useEffect(() => {
-//     if (activeTab === "Video KYC Waitlist") {
-//       fetchData();
-//     }
-//   }, [fetchData, activeTab]);
-
-//   useEffect(() => {
-//     setCurrentPage(1);
-//   }, [debouncedSearch, activeView]);
-
-//   const startIndex = (currentPage - 1) * itemsPerPage;
-//   const paginatedCustomers = customers.slice(
-//     startIndex,
-//     startIndex + itemsPerPage,
-//   );
-
-//   const handleOpenInitiationModal = (customer) => {
-//     setSelectedCustomer(customer);
-//     setInitiationModalOpen(true);
-//   };
-
-//   const handleCloseInitiationModal = () => {
-//     setInitiationModalOpen(false);
-//   };
-
-//   const handleCloseIconClick = () => {
-//     setInitiationModalOpen(false);
-//     setEndModalOpen(true);
-//   };
-
-//   const handleEndCall = () => {
-//     setEndModalOpen(false);
-//   };
-
-//   const handleTabChange = (event, newValue) => {
-//     setActiveTab(newValue);
-//     if (newValue === "Video KYC Waitlist") {
-//       setActiveView("live");
-//     }
-//   };
-
-//   return (
-//     <div className="card">
-//       <div className="card-body">
-//         <Tabs
-//           value={activeTab}
-//           onChange={handleTabChange}
-//           variant="standard"
-//           TabIndicatorProps={{
-//             sx: {
-//               backgroundColor: "#1C43A6",
-//               height: "2px",
-//               borderRadius: "0px", 
-//               top: "auto", 
-//             },
-//           }}
-//           sx={{
-//             minHeight: "44px",
-
-//             "& .MuiTabs-flexContainer": {
-//               display: "flex",
-//               alignItems: "center",
-//               gap: "24px", 
-//             },
-
-//             "& .MuiTabs-indicator": {
-//               borderTop: "none", 
-//             },
-//           }}
-//         >
-          
-//           <Tab
-//             value="Video KYC Waitlist"
-//             icon={<GroupsIcon fontSize="small" />}
-//             iconPosition="start"
-//             label="Video KYC Waitlist"
-//             disableRipple
-//             sx={{
-//               minHeight: "44px",
-//               padding: "0",
-//               textTransform: "none",
-//               fontSize: "14px", 
-//               fontWeight: 500,
-//               color: "#111827",
-//               gap: "6px", 
-//               "&.Mui-selected": {
-//                 color: "#1C43A6",
-//                 fontWeight: 500, 
-//               },
-
-//               "& .MuiTab-iconWrapper": {
-//                 margin: "0",
-//               },
-//             }}
-//           />
-
-        
-//           <Tab
-//             value="Past KYC Calls"
-//             icon={<HistoryIcon fontSize="small" />}
-//             iconPosition="start"
-//             label="Past KYC Calls"
-//             disableRipple
-//             sx={{
-//               minHeight: "44px",
-//               padding: "0",
-//               textTransform: "none",
-//               fontSize: "14px",
-//               fontWeight: 500,
-//               color: "#111827",
-//               gap: "6px",
-
-//               "&.Mui-selected": {
-//                 color: "#1C43A6",
-//                 fontWeight: 500,
-//               },
-//             }}
-//           />
-
-         
-//           <Tab
-//             value="Draft List"
-//             icon={<EditNoteIcon fontSize="small" />}
-//             iconPosition="start"
-//             label="Draft List"
-//             disableRipple
-//             sx={{
-//               minHeight: "44px",
-//               padding: "0",
-//               textTransform: "none",
-//               fontSize: "14px",
-//               fontWeight: 500,
-//               color: "#111827",
-//               gap: "6px",
-
-//               "&.Mui-selected": {
-//                 color: "#1C43A6",
-//                 fontWeight: 500,
-//               },
-//             }}
-//           />
-//         </Tabs>
-
-//         <Box sx={{ borderBottom: 1, borderColor: "divider", my: 3 }} />
-
-//         {activeTab === "Video KYC Waitlist" && (
-//           <>
-//             <Box
-//               display="flex"
-//               justifyContent="space-between"
-//               alignItems="center"
-//               flexWrap="wrap"
-//               gap={2}
-//               mb={3}
-//             >
-//               <ActionButtons
-//                 activeView={activeView}
-//                 onViewChange={(v) => {
-//                   setSearch("");
-//                   setActiveView(v);
-//                 }}
-//                 liveCount={liveCount}
-//                 missedCount={missedCount}
-//                 onRefresh={fetchData}
-//               />
-
-//               <TextField
-//                 size="small"
-//                 placeholder="Search customers..."
-//                 value={search}
-//                 onChange={(e) => setSearch(e.target.value)}
-//                 InputProps={{
-//                   startAdornment: (
-//                     <InputAdornment position="start">
-//                       <SearchIcon />
-//                     </InputAdornment>
-//                   ),
-//                 }}
-//               />
-//             </Box>
-
-//             {loading ? (
-//               <Typography align="center">Loading...</Typography>
-//             ) : paginatedCustomers.length === 0 ? (
-//               <Typography align="center" color="text.secondary" sx={{ py: 4 }}>
-//                 No records found
-//               </Typography>
-//             ) : activeView === "live" ? (
-//               <LiveScheduleTable
-//                 customers={paginatedCustomers}
-//                 onInitiateCall={handleOpenInitiationModal}
-//               />
-//             ) : (
-//               <MissedCallsTable
-//                 customers={paginatedCustomers}
-//                 onInitiateCall={handleOpenInitiationModal}
-//               />
-//             )}
-
-//             <Pagination
-//               currentPage={currentPage}
-//               totalItems={customers.length}
-//               itemsPerPage={itemsPerPage}
-//               onPageChange={setCurrentPage}
-//             />
-//           </>
-//         )}
-
-//         {activeTab === "Past KYC Calls" && (
-//           <Box sx={{ mt: 2 }}>
-//             <PastKycCallsTable />
-//           </Box>
-//         )}
-
-//         {activeTab === "Draft List" && (
-//           <Box sx={{ mt: 2, p: 3, textAlign: "center" }}>
-//             <Typography variant="h5">Draft List</Typography>
-//             <Typography color="text.secondary">
-//               This page is under development.
-//             </Typography>
-//           </Box>
-//         )}
-
-//         {selectedCustomer && (
-//           <CallInitiationModal
-//             open={initiationModalOpen}
-//             onClose={handleCloseInitiationModal}
-//             onCloseIconClick={handleCloseIconClick}
-//             customer={selectedCustomer}
-//           />
-//         )}
-
-//         <CallEndModal
-//           open={endModalOpen}
-//           onClose={() => setEndModalOpen(false)}
-//           onConfirm={handleEndCall}
-//         />
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default CustomerTable;
-
-
 import { useEffect, useState, useCallback } from "react";
 import PastKycCallsTable from "../pages/AgentDashboard/PastKycCallsTable";
 
@@ -371,10 +29,12 @@ import {
   getMissedCalls,
   searchKyc,
 } from "../api/videoKycWaitlist.api";
+
+import getPastKycCalls from "../api/kyc.api";
 import searchPastKycCalls from "../api/pastsearch";
 
 /* ---------------- debounce hook ---------------- */
-const useDebounce = (value, delay = 500) => {
+const useDebounce = (value, delay = 400) => {
   const [debounced, setDebounced] = useState(value);
 
   useEffect(() => {
@@ -398,25 +58,80 @@ const CustomerTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 3;
 
+  /* ✅ MODAL STATES */
   const [initiationModalOpen, setInitiationModalOpen] = useState(false);
   const [endModalOpen, setEndModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
+  /* COUNTS */
   const [liveCount, setLiveCount] = useState(0);
   const [missedCount, setMissedCount] = useState(0);
 
-  /* ---------------- FETCH WAITLIST ---------------- */
+  /* ---------------- FETCH COUNTS ---------------- */
+  const fetchCounts = useCallback(async () => {
+    const [live, missed] = await Promise.all([
+      getLiveSchedule(),
+      getMissedCalls(),
+    ]);
+    setLiveCount(live.data?.length ?? 0);
+    setMissedCount(missed.data?.length ?? 0);
+  }, []);
+
+  /* ---------------- FETCH LIVE / MISSED ---------------- */
   const fetchWaitlistData = useCallback(async () => {
     setLoading(true);
     try {
+      const res =
+        activeView === "live"
+          ? await getLiveSchedule()
+          : await getMissedCalls();
+      setCustomers(res.data || []);
+    } catch {
+      setCustomers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeView]);
+
+  /* ---------------- FETCH PAST KYC ---------------- */
+  const fetchPastKyc = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await getPastKycCalls();
+      setCustomers(res.data || []);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /* ---------------- SEARCH ---------------- */
+
+  const handleSearch = useCallback(async () => {
+    // ✅ SEARCH CLEARED
+    if (debouncedSearch.trim().length < 2) {
+      setCurrentPage(1);
+
+      // 🔁 reload correct list
+      if (activeTab === "Video KYC Waitlist") {
+        fetchWaitlistData();
+      } else if (activeTab === "Past KYC Calls") {
+        fetchPastKyc();
+      }
+
+      return;
+    }
+
+    // ✅ SEARCH MODE
+    setLoading(true);
+    setCurrentPage(1);
+
+    try {
       let res;
 
-      if (activeView === "live") {
-        res = await getLiveSchedule();
-        setLiveCount(res.data?.length || 0);
+      if (activeTab === "Past KYC Calls") {
+        res = await searchPastKycCalls(debouncedSearch);
       } else {
-        res = await getMissedCalls();
-        setMissedCount(res.data?.length || 0);
+        res = await searchKyc(debouncedSearch, activeView);
       }
 
       setCustomers(res.data || []);
@@ -426,90 +141,150 @@ const CustomerTable = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeView]);
+  }, [debouncedSearch, activeTab, activeView, fetchWaitlistData, fetchPastKyc]);
 
-  /* ---------------- SEARCH (TAB AWARE) ---------------- */
-  const handleSearch = useCallback(async () => {
-    if (!debouncedSearch || debouncedSearch.trim().length < 2) {
-      if (activeTab === "Video KYC Waitlist") {
-        fetchWaitlistData();
-      }
-      return;
+  /* ---------------- TAB CHANGE ---------------- */
+  const handleTabChange = (_, tab) => {
+    setActiveTab(tab);
+    setSearch("");
+    setCurrentPage(1);
+
+    if (tab === "Video KYC Waitlist") {
+      setActiveView("live");
     }
+  };
 
-    try {
-      setLoading(true);
-      let res;
-
-      if (activeTab === "Past KYC Calls") {
-        res = await searchPastKycCalls(debouncedSearch);
-      } else {
-        res = await searchKyc(debouncedSearch);
-      }
-
-      setCustomers(res.data || []);
-    } catch (err) {
-      console.error("Search error:", err.message);
-      setCustomers([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [debouncedSearch, activeTab, fetchWaitlistData]);
-
+  /* ---------------- EFFECTS ---------------- */
   useEffect(() => {
     if (activeTab === "Video KYC Waitlist") {
+      fetchCounts();
       fetchWaitlistData();
+    } else if (activeTab === "Past KYC Calls") {
+      fetchPastKyc();
     }
-  }, [fetchWaitlistData, activeTab]);
+  }, [activeTab, fetchCounts, fetchWaitlistData, fetchPastKyc]);
 
   useEffect(() => {
     handleSearch();
   }, [handleSearch]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch, activeView, activeTab]);
+  /* ---------------- PAGINATION ---------------- */
+  const start = (currentPage - 1) * itemsPerPage;
+  const paginatedCustomers = customers.slice(start, start + itemsPerPage);
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedCustomers = customers.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
+  /* ---------------- MODAL HANDLERS ---------------- */
+  const handleOpenInitiationModal = (customer) => {
+    setSelectedCustomer(customer);
+    setInitiationModalOpen(true);
+  };
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-    setSearch("");
+  const handleCloseInitiationModal = () => {
+    setInitiationModalOpen(false);
+  };
+
+  const handleCloseIconClick = () => {
+    setInitiationModalOpen(false);
+    setEndModalOpen(true);
+  };
+
+  const handleEndCall = () => {
+    setEndModalOpen(false);
   };
 
   return (
     <div className="card">
       <div className="card-body">
-        {/* Tabs + Search */}
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab value="Video KYC Waitlist" icon={<GroupsIcon />} label="Video KYC Waitlist" />
-            <Tab value="Past KYC Calls" icon={<HistoryIcon />} label="Past KYC Calls" />
-            <Tab value="Draft List" icon={<EditNoteIcon />} label="Draft List" />
-          </Tabs>
-
-          {(activeTab === "Video KYC Waitlist" ||
-            activeTab === "Past KYC Calls") && (
-            <TextField
-              size="small"
-              placeholder="Search customers..."
-              value={search}
-              autoFocus
-              onChange={(e) => setSearch(e.target.value)}
-              sx={{ width: 280 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon />
-                  </InputAdornment>
-                ),
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="space-evenly"
+          gap={2}
+          flexWrap="wrap"
+        >
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              "& .MuiTabs-flexContainer": {
+                gap: 3,
+              },
+            }}
+          >
+            <Tab
+              value="Video KYC Waitlist"
+              label="Video KYC Waitlist"
+              icon={<GroupsIcon />}
+              iconPosition="start"
+              sx={{
+                flexDirection: "row",
+                gap: "6px",
+                textTransform: "none",
+                minHeight: 34,
+                "& .MuiTab-iconWrapper": {
+                  marginBottom: "0 !important",
+                },
               }}
             />
-          )}
+
+            <Tab
+              value="Past KYC Calls"
+              label="Past KYC Calls"
+              icon={<HistoryIcon />}
+              iconPosition="start"
+              sx={{
+                flexDirection: "row",
+                gap: "6px",
+                textTransform: "none",
+                minHeight: 34,
+                "& .MuiTab-iconWrapper": {
+                  marginBottom: "0 !important",
+                },
+              }}
+            />
+
+            <Tab
+              value="Draft List"
+              label="Draft List"
+              icon={<EditNoteIcon />}
+              iconPosition="start"
+              sx={{
+                flexDirection: "row",
+                textTransform: "none",
+                minHeight: 34,
+                "& .MuiTab-iconWrapper": {
+                  marginBottom: "0 !important",
+                },
+              }}
+            />
+          </Tabs>
+
+          {/* Search */}
+          <TextField
+            size="small"
+            placeholder="Search customers..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              width: {
+                xs: "400px", // 📱 mobile
+                sm: "240px", // tablet
+                md: "280px", // desktop
+              },
+              mt: {
+                xs: 1,
+                sm: 0,
+              },
+            }}
+          />
         </Box>
 
         <Box sx={{ borderBottom: 1, borderColor: "divider", my: 3 }} />
@@ -518,18 +293,38 @@ const CustomerTable = () => {
           <>
             <ActionButtons
               activeView={activeView}
-              onViewChange={setActiveView}
+              onViewChange={(view) => {
+                setActiveView(view);
+                setSearch("");
+                setCurrentPage(1);
+              }}
               liveCount={liveCount}
               missedCount={missedCount}
-              onRefresh={fetchWaitlistData}
+              onRefresh={() => {
+                setSearch("");
+                setCurrentPage(1);
+                fetchWaitlistData();
+              }}
             />
 
             {loading ? (
               <Typography align="center">Loading...</Typography>
+            ) : customers.length === 0 ? (
+              <Box textAlign="center" py={5}>
+                <Typography colSpan={6} align="center">
+                  No records found
+                </Typography>
+              </Box>
             ) : activeView === "live" ? (
-              <LiveScheduleTable customers={paginatedCustomers} />
+              <LiveScheduleTable
+                customers={paginatedCustomers}
+                onInitiateCall={handleOpenInitiationModal}
+              />
             ) : (
-              <MissedCallsTable customers={paginatedCustomers} />
+              <MissedCallsTable
+                customers={paginatedCustomers}
+                onInitiateCall={handleOpenInitiationModal}
+              />
             )}
 
             <Pagination
@@ -545,24 +340,20 @@ const CustomerTable = () => {
           <PastKycCallsTable data={customers} loading={loading} />
         )}
 
-        {activeTab === "Draft List" && (
-          <Box textAlign="center">
-            <Typography variant="h6">Draft List</Typography>
-            <Typography color="text.secondary">
-              This page is under development
-            </Typography>
-          </Box>
+        {/* MODALS */}
+        {selectedCustomer && (
+          <CallInitiationModal
+            open={initiationModalOpen}
+            onClose={handleCloseInitiationModal}
+            onCloseIconClick={handleCloseIconClick}
+            customer={selectedCustomer}
+          />
         )}
-
-        <CallInitiationModal
-          open={initiationModalOpen}
-          onClose={() => setInitiationModalOpen(false)}
-          customer={selectedCustomer}
-        />
 
         <CallEndModal
           open={endModalOpen}
           onClose={() => setEndModalOpen(false)}
+          onConfirm={handleEndCall}
         />
       </div>
     </div>

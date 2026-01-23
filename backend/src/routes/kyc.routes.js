@@ -8,5 +8,10 @@ router.get("/live-schedule", kycController.getLiveScheduleKyc);
 router.get("/missed", kycController.getMissedCallsKyc);
 router.get("/search", kycController.searchKyc);
 router.get("/refresh", kycController.refreshDashboard);
+router.get("/search-past", kycController.searchPastKyc);
+router.get("/search-missed", kycController.searchMissedKyc);
+
 
 module.exports = router;
+
+

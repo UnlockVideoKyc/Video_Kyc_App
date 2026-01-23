@@ -8,10 +8,8 @@
 //   Paper,
 //   Chip,
 //   Box,
-//   Typography
+//   Typography,
 // } from "@mui/material";
-// import { useEffect, useState } from "react";
-// import  getPastKycCalls  from "../../api/kyc.api";
 
 // const StatusChip = ({ status }) => {
 //   if (status === "Approved")
@@ -21,25 +19,7 @@
 //   return <Chip label="Discrepancy" color="primary" variant="outlined" />;
 // };
 
-// const PastKycCallsTable = () => {
-//   const [rows, setRows] = useState([]);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     fetchPastKyc();
-//   }, []);
-
-//   const fetchPastKyc = async () => {
-//     try {
-//       const res = await getPastKycCalls();
-//       setRows(res.data || []);
-//     } catch (err) {
-//       console.error("Past KYC fetch failed", err.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
+// const PastKycCallsTable = ({ data = [], loading = false }) => {
 //   if (loading) {
 //     return (
 //       <Box sx={{ py: 4, textAlign: "center" }}>
@@ -62,19 +42,19 @@
 //         </TableHead>
 
 //         <TableBody>
-//           {rows.map((row, index) => (
-//             <TableRow key={index}>
-//               <TableCell>{row.customerName}</TableCell>
-//               <TableCell>{row.clientName}</TableCell>
-//               <TableCell>{row.vcipId}</TableCell>
-//               <TableCell>{row.connectionId}</TableCell>
+//           {data.map((row, index) => (
+//             <TableRow key={row.vcipId || index}>
+//               <TableCell>{row.customerName || "-"}</TableCell>
+//               <TableCell>{row.clientName || "-"}</TableCell>
+//               <TableCell>{row.vcipId || "-"}</TableCell>
+//               <TableCell>{row.connectionId ?? "-"}</TableCell>
 //               <TableCell>
 //                 <StatusChip status={row.callStatus} />
 //               </TableCell>
 //             </TableRow>
 //           ))}
 
-//           {rows.length === 0 && (
+//           {data.length === 0 && (
 //             <TableRow>
 //               <TableCell colSpan={5} align="center">
 //                 No Past KYC Records Found
@@ -89,6 +69,8 @@
 
 // export default PastKycCallsTable;
 
+
+
 import {
   Table,
   TableBody,
@@ -101,9 +83,8 @@ import {
   Box,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
-import getPastKycCalls from "../../api/kyc.api";
 
+/* ---------------- Status Chip ---------------- */
 const StatusChip = ({ status }) => {
   if (status === "Approved")
     return <Chip label="Approved" color="success" variant="outlined" />;
@@ -112,33 +93,8 @@ const StatusChip = ({ status }) => {
   return <Chip label="Discrepancy" color="primary" variant="outlined" />;
 };
 
-const PastKycCallsTable = ({ data = [], loading }) => {
-  const [rows, setRows] = useState([]);
-
-  useEffect(() => {
-    // ✅ If data comes from parent (search results), use it
-    if (data && data.length >= 0) {
-      setRows(data);
-    }
-  }, [data]);
-
-  useEffect(() => {
-    // ✅ Initial load only when no parent data
-    if (!data || data.length === 0) {
-      fetchPastKyc();
-    }
-    // eslint-disable-next-line
-  }, []);
-
-  const fetchPastKyc = async () => {
-    try {
-      const res = await getPastKycCalls();
-      setRows(res.data || []);
-    } catch (err) {
-      console.error("Past KYC fetch failed", err.message);
-    }
-  };
-
+/* ---------------- Table ---------------- */
+const PastKycCallsTable = ({ data = [], loading = false }) => {
   if (loading) {
     return (
       <Box sx={{ py: 4, textAlign: "center" }}>
@@ -150,37 +106,40 @@ const PastKycCallsTable = ({ data = [], loading }) => {
   return (
     <TableContainer component={Paper}>
       <Table>
+        {/* ---------- HEADER ---------- */}
         <TableHead>
           <TableRow>
-            <TableCell>
-              <b>Customer Name</b>
-            </TableCell>
-            <TableCell>
-              <b>Client Name</b>
-            </TableCell>
-            <TableCell>
-              <b>VCIP ID</b>
-            </TableCell>
-            <TableCell>
-              <b>Connection ID</b>
-            </TableCell>
-            <TableCell>
-              <b>Call Status</b>
-            </TableCell>
+            <TableCell><b>Customer Name</b></TableCell>
+            <TableCell><b>Client Name</b></TableCell>
+            <TableCell><b>VCIP ID</b></TableCell>
+            {/* <TableCell><b>Contact Number</b></TableCell> */}
+            <TableCell><b>Connection ID</b></TableCell>
+            <TableCell><b>Call Status</b></TableCell>
           </TableRow>
         </TableHead>
 
+        {/* ---------- BODY ---------- */}
         <TableBody>
-          {rows.map((row, index) => (
-            <TableRow key={index}>
-              <TableCell>
-                {row.customerName || row.CustomerName || "-"}
-              </TableCell>
-              <TableCell>{row.clientName || row.ClientName || "-"}</TableCell>
-              <TableCell>{row.vcipId || row.VcipId || "-"}</TableCell>
-              <TableCell>
-                {row?.connectionId || row?.ConnectionId || "-"}
-              </TableCell>
+          {data.map((row, index) => (
+            <TableRow key={row.PastKycId || row.vcipId || index}>
+              <TableCell>{row.customerName || "-"}</TableCell>
+              <TableCell>{row.clientName || "-"}</TableCell>
+              <TableCell>{row.vcipId || "-"}</TableCell>
+
+              {/* ✅ Contact Number */}
+              {/* <TableCell>
+                {row.mobileNumber ? (
+                  <Typography
+                    sx={{ fontWeight: 500, color: "#2563eb" }}
+                  >
+                    {row.mobileNumber}
+                  </Typography>
+                ) : (
+                  "-"
+                )}
+              </TableCell> */}
+
+              <TableCell>{row.connectionId ?? "-"}</TableCell>
 
               <TableCell>
                 <StatusChip status={row.callStatus} />
@@ -188,9 +147,10 @@ const PastKycCallsTable = ({ data = [], loading }) => {
             </TableRow>
           ))}
 
-          {rows.length === 0 && (
+          {/* ---------- EMPTY STATE ---------- */}
+          {data.length === 0 && (
             <TableRow>
-              <TableCell colSpan={5} align="center">
+              <TableCell colSpan={6} align="center">
                 No Past KYC Records Found
               </TableCell>
             </TableRow>
