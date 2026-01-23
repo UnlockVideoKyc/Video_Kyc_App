@@ -43,7 +43,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
+// Routess
 app.use("/api", routes);
 
 // Health check
