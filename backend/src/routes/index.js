@@ -15,6 +15,10 @@ router.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
     service: "Video KYC Backend"
   });
+
+
+
+  
 });
 
 module.exports = router;
