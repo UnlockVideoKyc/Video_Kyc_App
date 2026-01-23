@@ -16,10 +16,6 @@ router.get("/health", (req, res) => {
     service: "Video KYC Backend"
   });
 
-
-
-
-  
   
 });
 

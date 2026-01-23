@@ -47,7 +47,7 @@ app.use((req, res, next) => {
 app.use("/v1", routes);
 
 // Health check
-app.get("/", (req, res) => {
+app.get("/api", (req, res) => {
   res.json({
     success: true,
     message: "DigiKhata Backend API",
