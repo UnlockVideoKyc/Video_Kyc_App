@@ -3,6 +3,8 @@ import { Phone, MessageCircle } from "lucide-react";
 import StatusIndicator from "./StatusIndicator";
 
 const MissedCallsTable = ({ customers, onInitiateCall  }) => {
+  console.table(customers.map(c => c.MissedId));
+
   return (
     <div className="table-responsive">
       <table className="table table-hover">
@@ -20,7 +22,7 @@ const MissedCallsTable = ({ customers, onInitiateCall  }) => {
         </thead>
         <tbody>
           {customers.map((c) => (
-            <tr key={c.MissedId}>
+            <tr key={`${c.MissedId}-${c.VcipId}`}>
               <td className="fw-bold">{c.CustomerName}</td>
               <td className="fw-bold">{c.ClientName}</td>
               <td className="fw-bold">{c.VcipId}</td>
@@ -73,7 +75,7 @@ const MissedCallsTable = ({ customers, onInitiateCall  }) => {
                     textTransform: "none",
                     boxShadow: "none",
                   }}
-                  onClick={() => onInitiateCall(customers)}
+                  onClick={() => onInitiateCall(c)}
                 >
                   Initiate Call
                 </Button>

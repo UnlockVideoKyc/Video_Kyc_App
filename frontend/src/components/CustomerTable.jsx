@@ -28,7 +28,7 @@ import CallEndModal from "../components/CallEndModal";
 
 /* ---------------- debounce hook ---------------- */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
+const api_base_url = `${API_BASE_URL}/api/kyc`;
 const useDebounce = (value, delay = 400) => {
   const [debounced, setDebounced] = useState(value);
 
@@ -43,6 +43,7 @@ const useDebounce = (value, delay = 400) => {
 const CustomerTable = () => {
   // const theme = useTheme();
   // const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  
 
   const [activeTab, setActiveTab] = useState("Video KYC Waitlist");
   const [activeView, setActiveView] = useState("live");
@@ -64,7 +65,7 @@ const CustomerTable = () => {
   const [liveCount, setLiveCount] = useState(0);
   const [missedCount, setMissedCount] = useState(0);
 
-  const API_BASE = `${API_BASE_URL}/api/kyc`;
+  
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -72,11 +73,11 @@ const CustomerTable = () => {
       let url = "";
 
       if (debouncedSearch) {
-        url = `${API_BASE}/search?q=${debouncedSearch}&view=${activeView}`;
+        url = `${api_base_url}/search?q=${debouncedSearch}&view=${activeView}`;
       } else if (activeView === "live") {
-        url = `${API_BASE}/live-schedule`;
+        url = `${api_base_url}/live-schedule`;
       } else {
-        url = `${API_BASE}/missed`;
+        url = `${api_base_url}/missed`;
       }
 
       const res = await fetch(url);
@@ -95,7 +96,7 @@ const CustomerTable = () => {
     } finally {
       setLoading(false);
     }
-  }, [API_BASE, debouncedSearch, activeView]);
+  }, [api_base_url, debouncedSearch, activeView]);
 
   useEffect(() => {
     if (activeTab === "Video KYC Waitlist") {
