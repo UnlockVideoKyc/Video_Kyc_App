@@ -7,7 +7,7 @@ on:
 
 jobs:
 # --------------------------------------------------
-# JOB 1: COMMIT MESSAGE VALIDATION (CLOUD)
+# JOB 1: COMMIT MESSAGE VALIDATION
 # --------------------------------------------------
   commitlint:
     name: Commitlint Check
@@ -38,10 +38,10 @@ jobs:
           ${{ secrets.SLACK_WEBHOOK_URL }}
 
 # --------------------------------------------------
-# JOB 2: BUILD FRONTEND (CLOUD – SAFE)
+# JOB 2: BUILD FRONTEND (PRODUCTION SAFE)
 # --------------------------------------------------
   build-frontend:
-    name: Build Frontend (GitHub Runner)
+    name: Build Frontend (Production)
     needs: commitlint
     runs-on: ubuntu-latest
 
@@ -54,14 +54,15 @@ jobs:
         with:
           node-version: 'lts/*'
 
-      - name: Install frontend deps
+      - name: Install frontend dependencies
         run: |
           cd frontend
           npm ci --no-audit --no-fund
 
-      - name: Build frontend
+      - name: Build frontend (PROD API)
         run: |
           cd frontend
+          export VITE_API_BASE_URL=https://yo1.kycstack.in/v1
           NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
       - name: Upload frontend dist
@@ -80,7 +81,7 @@ jobs:
 
     steps:
       # ---------- UPDATE SERVER CODE ----------
-      - name: Pull latest code on server
+      - name: Pull latest code
         run: |
           cd /var/www/Video_Kyc_App
           git fetch origin
@@ -100,10 +101,11 @@ jobs:
           pm2 start src/server.js --name Video_Kyc_App-backend
           pm2 save
 
-      - name: Verify Backend Health
+      # ---------- BACKEND HEALTH CHECK ----------
+      - name: Verify Backend Health (NGINX + API)
         run: |
           sleep 5
-          curl -f http://localhost:5000/api/health
+          curl -f http://127.0.0.1/v1/health
 
       # ---------- FRONTEND DEPLOY ----------
       - name: Download frontend build
