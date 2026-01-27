@@ -105,7 +105,7 @@ jobs:
       - name: Verify Backend Health (NGINX + API)
         run: |
           sleep 5
-          curl -f http://127.0.0.1/v1/health
+          curl -f http://127.0.0.1:5000/v1/health
 
       # ---------- FRONTEND DEPLOY ----------
       - name: Download frontend build
