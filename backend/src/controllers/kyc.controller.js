@@ -1,6 +1,7 @@
 const kycRepo = require("../repositories/kyc.repo");
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/ApiError");
+const ApiResponse = require("../utils/ApiResponse");
 
 /* =========================
    WAITLIST
@@ -11,12 +12,12 @@ exports.getVideoKycWaitlist = asyncHandler(async (req, res) => {
 
   const result = await kycRepo.getVideoKycWaitlist(page, limit);
 
-  res.status(200).json({
-    success: true,
-    message: "Video KYC waitlist fetched",
-    meta: result.meta,
-    data: result.data,
-  });
+  res.status(200).json(
+    new ApiResponse("Video KYC waitlist fetched", {
+      meta: result.meta,
+      data: result.data,
+    })
+  );
 });
 
 /* =========================
@@ -26,16 +27,19 @@ exports.searchMissedKyc = asyncHandler(async (req, res) => {
   const query = (req.query.q || "").trim();
 
   if (query.length < 2) {
-    return res.status(200).json({ success: true, data: [] });
+    return res.status(200).json(
+      new ApiResponse("Search query too short", [])
+    );
   }
 
   const data = await kycRepo.searchMissedKyc(query);
 
-  res.status(200).json({
-    success: true,
-    count: data.length,
-    data,
-  });
+  res.status(200).json(
+    new ApiResponse("Missed KYC search results", {
+      count: data.length,
+      data,
+    })
+  );
 });
 
 /* =========================
@@ -44,11 +48,9 @@ exports.searchMissedKyc = asyncHandler(async (req, res) => {
 exports.getLiveScheduleKyc = asyncHandler(async (req, res) => {
   const data = await kycRepo.getLiveScheduleKyc();
 
-  res.status(200).json({
-    success: true,
-    message: "Live & Scheduled calls fetched",
-    data,
-  });
+  res.status(200).json(
+    new ApiResponse("Live & scheduled calls fetched", data)
+  );
 });
 
 /* =========================
@@ -57,11 +59,9 @@ exports.getLiveScheduleKyc = asyncHandler(async (req, res) => {
 exports.getMissedCallsKyc = asyncHandler(async (req, res) => {
   const data = await kycRepo.getMissedCallsKyc();
 
-  res.status(200).json({
-    success: true,
-    message: "Missed calls fetched",
-    data,
-  });
+  res.status(200).json(
+    new ApiResponse("Missed calls fetched", data)
+  );
 });
 
 /* =========================
@@ -72,7 +72,9 @@ exports.searchKyc = asyncHandler(async (req, res) => {
   const view = req.query.view || "live";
 
   if (query.length < 2) {
-    return res.status(200).json({ success: true, data: [] });
+    return res.status(200).json(
+      new ApiResponse("Search query too short", [])
+    );
   }
 
   const data =
@@ -80,12 +82,12 @@ exports.searchKyc = asyncHandler(async (req, res) => {
       ? await kycRepo.searchLiveKyc(query)
       : await kycRepo.searchMissedKyc(query);
 
-  res.status(200).json({
-    success: true,
-    message: "Search results",
-    count: data.length,
-    data,
-  });
+  res.status(200).json(
+    new ApiResponse("Search results fetched", {
+      count: data.length,
+      data,
+    })
+  );
 });
 
 /* =========================
@@ -96,15 +98,13 @@ exports.refreshDashboard = asyncHandler(async (req, res) => {
   const live = await kycRepo.getLiveScheduleKyc();
   const missed = await kycRepo.getMissedCallsKyc();
 
-  res.status(200).json({
-    success: true,
-    message: "Dashboard refreshed",
-    data: {
+  res.status(200).json(
+    new ApiResponse("Dashboard refreshed successfully", {
       waitlist: waitlist.data,
       live,
       missed,
-    },
-  });
+    })
+  );
 });
 
 /* =========================
@@ -114,17 +114,17 @@ exports.searchPastKyc = asyncHandler(async (req, res) => {
   const q = (req.query.q || "").trim();
 
   if (q.length < 2) {
-    return res.status(200).json({
-      success: true,
-      data: [],
-    });
+    return res.status(200).json(
+      new ApiResponse("Search query too short", [])
+    );
   }
 
   const data = await kycRepo.searchPastKyc(q);
 
-  res.status(200).json({
-    success: true,
-    count: data.length,
-    data,
-  });
+  res.status(200).json(
+    new ApiResponse("Past KYC search results", {
+      count: data.length,
+      data,
+    })
+  );
 });

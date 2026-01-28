@@ -4,7 +4,7 @@ const agentRepo = require("../repositories/agent.repo");
 const otpRepo = require("../repositories/otp.repo");
 const mailer = require("../utils/mailer");
 const { generateOTP } = require("../utils/otp");
-const ApiError = require("../utils/ApiError"); // ✅ added
+const ApiError = require("../utils/ApiError"); 
 
 exports.login = async ({ email, password }) => {
   const agent = await agentRepo.findByEmail(email);
