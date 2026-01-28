@@ -3,9 +3,9 @@ const db = require("../config/db");
 exports.getAllCounts = async () => {
   const [rows] = await db.query(`
     SELECT
-      SUM(CallStatus = 'Approved') AS approved,
-      SUM(CallStatus = 'Rejected') AS rejected,
-      SUM(CallStatus = 'Discrepancy') AS discrepancy
+      COALESCE(SUM(CallStatus = 'Approved'), 0) AS approved,
+      COALESCE(SUM(CallStatus = 'Rejected'), 0) AS rejected,
+      COALESCE(SUM(CallStatus = 'Discrepancy'), 0) AS discrepancy
     FROM Past_Kyc_Calls
   `);
 
@@ -16,9 +16,9 @@ exports.getCountsByDate = async (start, end) => {
   const [rows] = await db.query(
     `
     SELECT
-      SUM(CallStatus = 'Approved') AS approved,
-      SUM(CallStatus = 'Rejected') AS rejected,
-      SUM(CallStatus = 'Discrepancy') AS discrepancy
+      COALESCE(SUM(CallStatus = 'Approved'), 0) AS approved,
+      COALESCE(SUM(CallStatus = 'Rejected'), 0) AS rejected,
+      COALESCE(SUM(CallStatus = 'Discrepancy'), 0) AS discrepancy
     FROM Past_Kyc_Calls
     WHERE CreatedAt BETWEEN ? AND ?
     `,

@@ -17,6 +17,7 @@ import wavingHand from "../assets/waving-hand.png";
 
 
 
+
 const ForgotPasswordPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -26,7 +27,6 @@ const ForgotPasswordPage = () => {
     email: "",
     dateOfBirth: "",
   });
-
 
   const handleChange = (field) => (event) => {
     setFormData((prev) => ({

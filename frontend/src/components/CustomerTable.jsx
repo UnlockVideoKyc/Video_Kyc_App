@@ -204,10 +204,10 @@ const CustomerTable = () => {
               sm: "column",
               md: "row", // ✅ 1024px now becomes single row
             },
-            justifyContent: "space-evenly",
+            justifyContent: "space-between",
             alignItems: "center",
-
-            gap: 6,
+            // mx: 4,
+            gap: 1,
           }}
         >
           <Tabs
@@ -226,19 +226,18 @@ const CustomerTable = () => {
             }}
           >
             <Tab
-  value="Video KYC Waitlist"   
-  label="Video KYC Waitlist"
-  icon={<GroupsIcon />}
-  iconPosition="start"
-  sx={{
-    minHeight: 34,
-    textTransform: "none",
-    flexShrink: 1,
-    minWidth: "unset",
-    whiteSpace: "nowrap",
-  }}
-/>
-
+              value="Video KYC Waitlist"
+              label="Video KYC Waitlist"
+              icon={<GroupsIcon />}
+              iconPosition="start"
+              sx={{
+                minHeight: 34,
+                textTransform: "none",
+                flexShrink: 1,
+                minWidth: "unset",
+                whiteSpace: "wrap",
+              }}
+            />
 
             <Tab
               value="Past KYC Calls"
@@ -247,7 +246,7 @@ const CustomerTable = () => {
               iconPosition="start"
               sx={{
                 flexDirection: "row",
-                gap: "6px",
+                gap: "3px",
                 textTransform: "none",
                 minHeight: 34,
                 "& .MuiTab-iconWrapper": {

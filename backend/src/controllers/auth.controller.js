@@ -8,8 +8,12 @@ const ApiError = require("../utils/ApiError");
 exports.login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    throw new ApiError(400, "Email and password are required");
+  const errors = [];
+  if (!email) errors.push({ field: "email", message: "Email is required" });
+  if (!password) errors.push({ field: "password", message: "Password is required" });
+
+  if (errors.length) {
+    throw new ApiError(400, "Validation failed", errors);
   }
 
   const result = await authService.login({ email, password });
@@ -22,8 +26,14 @@ exports.login = asyncHandler(async (req, res) => {
 exports.verifyOtp = asyncHandler(async (req, res) => {
   const { agtLoginId, otp } = req.body;
 
-  if (!agtLoginId || !otp) {
-    throw new ApiError(400, "Agent Login ID and OTP are required");
+  const errors = [];
+  if (!agtLoginId)
+    errors.push({ field: "agtLoginId", message: "Agent Login ID is required" });
+  if (!otp)
+    errors.push({ field: "otp", message: "OTP is required" });
+
+  if (errors.length) {
+    throw new ApiError(400, "Validation failed", errors);
   }
 
   const result = await authService.verifyOtp({ agtLoginId, otp });
@@ -36,13 +46,20 @@ exports.verifyOtp = asyncHandler(async (req, res) => {
 exports.resendOtp = asyncHandler(async (req, res) => {
   const { agtLoginId, purpose } = req.body;
 
-  if (!agtLoginId || !purpose) {
-    throw new ApiError(400, "Agent Login ID and purpose required");
+  const errors = [];
+  if (!agtLoginId)
+    errors.push({ field: "agtLoginId", message: "Agent Login ID is required" });
+  if (!purpose)
+    errors.push({ field: "purpose", message: "Purpose is required" });
+
+  if (errors.length) {
+    throw new ApiError(400, "Validation failed", errors);
   }
 
   const result = await authService.resendOtp({ agtLoginId, purpose });
   res.status(200).json(result);
 });
+
 
 /* =========================
    FORGOT PASSWORD
@@ -50,13 +67,18 @@ exports.resendOtp = asyncHandler(async (req, res) => {
 exports.forgotPassword = asyncHandler(async (req, res) => {
   const { email, dob } = req.body;
 
-  if (!email || !dob) {
-    throw new ApiError(400, "Email and Date of Birth are required");
+  const errors = [];
+  if (!email) errors.push({ field: "email", message: "Email is required" });
+  if (!dob) errors.push({ field: "dob", message: "Date of Birth is required" });
+
+  if (errors.length) {
+    throw new ApiError(400, "Validation failed", errors);
   }
 
   const result = await authService.forgotPassword({ email, dob });
   res.status(200).json(result);
 });
+
 
 /* =========================
    VERIFY FORGOT OTP
@@ -64,13 +86,20 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
 exports.verifyForgotOtp = asyncHandler(async (req, res) => {
   const { agtLoginId, otp } = req.body;
 
-  if (!agtLoginId || !otp) {
-    throw new ApiError(400, "Agent Login ID and OTP are required");
+  const errors = [];
+  if (!agtLoginId)
+    errors.push({ field: "agtLoginId", message: "Agent Login ID is required" });
+  if (!otp)
+    errors.push({ field: "otp", message: "OTP is required" });
+
+  if (errors.length) {
+    throw new ApiError(400, "Validation failed", errors);
   }
 
   const result = await authService.verifyForgotOtp({ agtLoginId, otp });
   res.status(200).json(result);
 });
+
 
 /* =========================
    RESET PASSWORD
