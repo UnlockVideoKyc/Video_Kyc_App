@@ -9,7 +9,7 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:5173", // Vite
-  "http://localhost:3000", // React
+  "http://localhost:5000", // React
 ];
 
 // CORS configuration
@@ -48,7 +48,7 @@ app.use((req, res, next) => {
 app.use("/v1", routes);
 
 // Health check
-app.get("/v1", (req, res) => {
+app.get("/", (req, res) => {
   res.json({
     success: true,
     message: "DigiKhata Backend API",
