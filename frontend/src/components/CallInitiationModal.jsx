@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button, Modal, Box, CircularProgress } from "@mui/material";
 import { Check, Close } from "@mui/icons-material";
 import Stack from "@mui/material/Stack";
 import LinearProgress from "@mui/material/LinearProgress";
-import dummyImage from "../assets/dummy.png";
+// import dummyImage from "../assets/dummy.png";
 import { useNavigate, Link } from "react-router-dom";
 import { FaMicrophone } from "react-icons/fa";
 import { MdVideocam, MdLocationOn } from "react-icons/md";
@@ -22,9 +22,8 @@ const CallInitiationModal = ({
   const [isVideoReady, setIsVideoReady] = useState(false);
   const [progressValue, setProgressValue] = useState(0);
   const [micEnabled, setMicEnabled] = useState(true);
-const [cameraEnabled, setCameraEnabled] = useState(true);
-const [locationEnabled, setLocationEnabled] = useState(true);
-
+  const [cameraEnabled, setCameraEnabled] = useState(true);
+  const [locationEnabled, setLocationEnabled] = useState(true);
 
   const permissionRow = {
     display: "flex",
@@ -40,46 +39,73 @@ const [locationEnabled, setLocationEnabled] = useState(true);
     fontSize: "14px",
   };
 
-  useEffect(() => {
-    if (open) {
-      setIsProcessing(false);
-      setIsSuccess(false);
-      setIsVideoReady(false);
-      setProgressValue(0);
-    }
-  }, [open]);
+const videoRef = useRef(null);
+
 
   useEffect(() => {
-    let timer;
-    let videoTimer;
-    let progressInterval;
+  if (open) {
+    setIsProcessing(false);
+    setIsSuccess(false);
+    setIsVideoReady(false);
+    setProgressValue(0);
+  }
+}, [open]);
 
-    if (isProcessing) {
-      progressInterval = setInterval(() => {
-        setProgressValue((prev) => {
-          if (prev >= 100) {
-            clearInterval(progressInterval);
-            return 100;
-          }
-          return prev + 1;
-        });
-      }, 40);
+useEffect(() => {
+  let timer;
+  let videoTimer;
+  let progressInterval;
 
-      timer = setTimeout(() => {
-        setIsSuccess(true);
-      }, 2000);
+  if (isProcessing) {
+    progressInterval = setInterval(() => {
+      setProgressValue((prev) => {
+        if (prev >= 100) {
+          clearInterval(progressInterval);
+          return 100;
+        }
+        return prev + 1;
+      });
+    }, 40);
 
-      videoTimer = setTimeout(() => {
-        setIsVideoReady(true);
-      }, 4000);
+    timer = setTimeout(() => {
+      setIsSuccess(true);
+    }, 2000);
+
+    videoTimer = setTimeout(() => {
+      setIsVideoReady(true);
+    }, 4000);
+  }
+
+  return () => {
+    clearTimeout(timer);
+    clearTimeout(videoTimer);
+    clearInterval(progressInterval);
+  };
+}, [isProcessing]);
+
+useEffect(() => {
+  if (isVideoReady && cameraEnabled) {
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: false })
+      .then((stream) => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      })
+      .catch((err) => {
+        console.error("Camera access denied", err);
+      });
+  }
+
+  return () => {
+    if (videoRef.current?.srcObject) {
+      videoRef.current.srcObject
+        .getTracks()
+        .forEach((track) => track.stop());
     }
+  };
+}, [isVideoReady, cameraEnabled]);
 
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(videoTimer);
-      clearInterval(progressInterval);
-    };
-  }, [isProcessing]);
 
   const handleStartCall = () => {
     if (!isProcessing) {
@@ -173,49 +199,59 @@ const [locationEnabled, setLocationEnabled] = useState(true);
           </p>
 
           {/* Permission Status */}
-<div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "20px" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              marginBottom: "20px",
+            }}
+          >
+            {/* Microphone */}
+            <div style={permissionRow}>
+              <div style={leftSection}>
+                <FaMicrophone size={18} />
+                <span>
+                  {micEnabled ? "Enabled Microphone" : "Disabled Microphone"}
+                </span>
+              </div>
+              <Switch
+                checked={micEnabled}
+                onChange={(e) => setMicEnabled(e.target.checked)}
+                color="primary"
+              />
+            </div>
 
-  {/* Microphone */}
-  <div style={permissionRow}>
-    <div style={leftSection}>
-      <FaMicrophone size={18} />
-      <span>{micEnabled ? "Enabled Microphone" : "Disabled Microphone"}</span>
-    </div>
-    <Switch
-      checked={micEnabled}
-      onChange={(e) => setMicEnabled(e.target.checked)}
-      color="primary"
-    />
-  </div>
+            {/* Camera */}
+            <div style={permissionRow}>
+              <div style={leftSection}>
+                <MdVideocam size={20} />
+                <span>
+                  {cameraEnabled ? "Enabled Camera" : "Disabled Camera"}
+                </span>
+              </div>
+              <Switch
+                checked={cameraEnabled}
+                onChange={(e) => setCameraEnabled(e.target.checked)}
+                color="primary"
+              />
+            </div>
 
-  {/* Camera */}
-  <div style={permissionRow}>
-    <div style={leftSection}>
-      <MdVideocam size={20} />
-      <span>{cameraEnabled ? "Enabled Camera" : "Disabled Camera"}</span>
-    </div>
-    <Switch
-      checked={cameraEnabled}
-      onChange={(e) => setCameraEnabled(e.target.checked)}
-      color="primary"
-    />
-  </div>
-
-  {/* Location */}
-  <div style={permissionRow}>
-    <div style={leftSection}>
-      <MdLocationOn size={20} />
-      <span>{locationEnabled ? "Enabled Location" : "Disabled Location"}</span>
-    </div>
-    <Switch
-      checked={locationEnabled}
-      onChange={(e) => setLocationEnabled(e.target.checked)}
-      color="primary"
-    />
-  </div>
-
-</div>
-
+            {/* Location */}
+            <div style={permissionRow}>
+              <div style={leftSection}>
+                <MdLocationOn size={20} />
+                <span>
+                  {locationEnabled ? "Enabled Location" : "Disabled Location"}
+                </span>
+              </div>
+              <Switch
+                checked={locationEnabled}
+                onChange={(e) => setLocationEnabled(e.target.checked)}
+                color="primary"
+              />
+            </div>
+          </div>
 
           <p
             style={{
@@ -275,44 +311,41 @@ const [locationEnabled, setLocationEnabled] = useState(true);
           )}
 
           <div
-            style={{
-              height: { xs: "150px", sm: "200px" },
-              backgroundColor: "#f8f9fa",
-              borderRadius: "4px",
-              marginBottom: "16px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            {isProcessing ? (
-              !isVideoReady ? (
-                <CircularProgress size={40} />
-              ) : (
-                <img
-                  src={dummyImage}
-                  alt="Video Preview"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              )
-            ) : (
-              <div
-                style={{
-                  color: "#6c757d",
-                  padding: "0 16px",
-                  textAlign: "center",
-                }}
-              >
-                Video will appear after processing
-              </div>
-            )}
-          </div>
+  style={{
+    height: { xs: "150px", sm: "200px" },
+    backgroundColor: "#f8f9fa",
+    borderRadius: "4px",
+    marginBottom: "16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    overflow: "hidden",
+  }}
+>
+  {isProcessing ? (
+    !isVideoReady ? (
+      <CircularProgress size={40} />
+    ) : (
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+        }}
+      />
+    )
+  ) : (
+    <div style={{ color: "#6c757d", textAlign: "center" }}>
+      Video will appear after processing
+    </div>
+  )}
+</div>
+
 
           <Button
             variant="contained"
