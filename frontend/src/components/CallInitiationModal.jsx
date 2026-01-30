@@ -39,75 +39,78 @@ const CallInitiationModal = ({
     fontSize: "14px",
   };
 
-const videoRef = useRef(null);
-
+  const videoRef = useRef(null);
 
   useEffect(() => {
-  if (open) {
-    setIsProcessing(false);
-    setIsSuccess(false);
-    setIsVideoReady(false);
-    setProgressValue(0);
-  }
-}, [open]);
-
-useEffect(() => {
-  let timer;
-  let videoTimer;
-  let progressInterval;
-
-  if (isProcessing) {
-    progressInterval = setInterval(() => {
-      setProgressValue((prev) => {
-        if (prev >= 100) {
-          clearInterval(progressInterval);
-          return 100;
-        }
-        return prev + 1;
-      });
-    }, 40);
-
-    timer = setTimeout(() => {
-      setIsSuccess(true);
-    }, 2000);
-
-    videoTimer = setTimeout(() => {
-      setIsVideoReady(true);
-    }, 4000);
-  }
-
-  return () => {
-    clearTimeout(timer);
-    clearTimeout(videoTimer);
-    clearInterval(progressInterval);
-  };
-}, [isProcessing]);
-
-useEffect(() => {
-  if (isVideoReady && cameraEnabled) {
-    navigator.mediaDevices
-      .getUserMedia({ video: true, audio: false })
-      .then((stream) => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      })
-      .catch((err) => {
-        console.error("Camera access denied", err);
-      });
-  }
-
-  return () => {
-    if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject
-        .getTracks()
-        .forEach((track) => track.stop());
+    if (open) {
+      setIsProcessing(false);
+      setIsSuccess(false);
+      setIsVideoReady(false);
+      setProgressValue(0);
     }
-  };
-}, [isVideoReady, cameraEnabled]);
+  }, [open]);
 
+  useEffect(() => {
+    let timer;
+    let videoTimer;
+    let progressInterval;
+
+    if (isProcessing) {
+      progressInterval = setInterval(() => {
+        setProgressValue((prev) => {
+          if (prev >= 100) {
+            clearInterval(progressInterval);
+            return 100;
+          }
+          return prev + 1;
+        });
+      }, 40);
+
+      timer = setTimeout(() => {
+        setIsSuccess(true);
+      }, 2000);
+
+      videoTimer = setTimeout(() => {
+        setIsVideoReady(true);
+      }, 4000);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(videoTimer);
+      clearInterval(progressInterval);
+    };
+  }, [isProcessing]);
+
+  useEffect(() => {
+    if (isVideoReady && cameraEnabled) {
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: false })
+        .then((stream) => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        })
+        .catch((err) => {
+          console.error("Camera access denied", err);
+        });
+    }
+
+    return () => {
+      if (videoRef.current?.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [isVideoReady, cameraEnabled]);
+
+  const allPermissionsGranted = micEnabled && cameraEnabled && locationEnabled;
 
   const handleStartCall = () => {
+    if (!allPermissionsGranted) {
+      alert("Please enable Microphone, Camera and Location to start the call.");
+      return;
+    }
+
     if (!isProcessing) {
       setIsProcessing(true);
       onStartCall();
@@ -311,52 +314,53 @@ useEffect(() => {
           )}
 
           <div
-  style={{
-    height: { xs: "150px", sm: "200px" },
-    backgroundColor: "#f8f9fa",
-    borderRadius: "4px",
-    marginBottom: "16px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-    overflow: "hidden",
-  }}
->
-  {isProcessing ? (
-    !isVideoReady ? (
-      <CircularProgress size={40} />
-    ) : (
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        playsInline
-        style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-        }}
-      />
-    )
-  ) : (
-    <div style={{ color: "#6c757d", textAlign: "center" }}>
-      Video will appear after processing
-    </div>
-  )}
-</div>
-
+            style={{
+              height: { xs: "150px", sm: "200px" },
+              backgroundColor: "#f8f9fa",
+              borderRadius: "4px",
+              marginBottom: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {isProcessing ? (
+              !isVideoReady ? (
+                <CircularProgress size={40} />
+              ) : (
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              )
+            ) : (
+              <div style={{ color: "#6c757d", textAlign: "center" }}>
+                Video will appear after processing
+              </div>
+            )}
+          </div>
 
           <Button
             variant="contained"
             onClick={isVideoReady ? handleSubmit : handleStartCall}
-            disabled={isProcessing && !isVideoReady}
+            disabled={
+              (!allPermissionsGranted && !isProcessing) ||
+              (isProcessing && !isVideoReady)
+            }
             fullWidth
             sx={{
               backgroundColor: "#1C43A6",
               color: "white",
               padding: "10px",
-              fontSize: { xs: "0.875rem", sm: "1rem" },
               "&:hover": {
                 backgroundColor: "#15317D",
               },

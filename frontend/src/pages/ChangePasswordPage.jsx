@@ -88,7 +88,7 @@ const ChangePasswordPage = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/agent/change-password`,
+        `${API_BASE_URL}/agent/change-password`,
         {
           method: "PUT",
           headers: {
