@@ -57,12 +57,12 @@ const CustomerTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  /* MODALS */
+  /* ---------------- MODALS ---------------- */
   const [initiationModalOpen, setInitiationModalOpen] = useState(false);
   const [endModalOpen, setEndModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-  /* COUNTS */
+  /* ---------------- COUNTS ---------------- */
   const [liveCount, setLiveCount] = useState(0);
   const [missedCount, setMissedCount] = useState(0);
 
@@ -162,29 +162,87 @@ const CustomerTable = () => {
     setInitiationModalOpen(true);
   };
 
+  const handleCloseInitiationModal = () => {
+    setInitiationModalOpen(false);
+  };
+
+  const handleCloseIconClick = () => {
+    setInitiationModalOpen(false);
+    setEndModalOpen(true);
+  };
+
+  const handleEndCall = () => {
+    setEndModalOpen(false);
+  };
+
   return (
     <div className="card">
       <div className="card-body">
         {/* -------- TABS + SEARCH -------- */}
-        <Box display="flex" justifyContent="space-between" flexWrap="wrap" gap={2}>
-          <Tabs value={activeTab} onChange={handleTabChange}>
+             <Box
+          sx={{
+            display: "flex",
+            flexDirection: {
+              xs: "column",
+              sm: "column",
+              md: "row", // ✅ 1024px now becomes single row
+            },
+            justifyContent: "space-between",
+            alignItems: "center",
+            // mx: 4,
+            gap: 1,
+          }}
+        >
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            variant="standard" // 🔥 remove scrollable
+            sx={{
+              minHeight: 34,
+              "& .MuiTabs-flexContainer": {
+                flexWrap: "nowrap",
+                gap: 2,
+              },
+              "& .MuiTabs-indicator": {
+                height: 3,
+              },
+            }}
+          >
             <Tab
               value="Video KYC Waitlist"
               label="Video KYC Waitlist"
               icon={<GroupsIcon />}
               iconPosition="start"
+              sx={{
+                minHeight: 34,
+                textTransform: "none",
+                flexShrink: 1,
+                minWidth: "unset",
+                whiteSpace: "wrap",
+              }}
             />
+
             <Tab
               value="Past KYC Calls"
               label="Past KYC Calls"
               icon={<HistoryIcon />}
               iconPosition="start"
+              sx={{
+                flexDirection: "row",
+                gap: "3px",
+                textTransform: "none",
+                minHeight: 34,
+                "& .MuiTab-iconWrapper": {
+                  marginBottom: "0 !important",
+                },
+              }}
             />
           </Tabs>
 
+          {/* Search */}
           <TextField
             size="small"
-            placeholder="Search..."
+            placeholder="Search customers..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             InputProps={{
@@ -193,6 +251,14 @@ const CustomerTable = () => {
                   <SearchIcon />
                 </InputAdornment>
               ),
+            }}
+            sx={{
+              width: {
+                xs: "100%",
+                sm: "100%",
+                md: "260px", // fits 1024
+              },
+              flexShrink: 0, // 🔥 search does NOT shrink
             }}
           />
         </Box>
@@ -254,17 +320,20 @@ const CustomerTable = () => {
           </>
         )}
 
+        {/* -------- MODALS -------- */}
         {selectedCustomer && (
           <CallInitiationModal
             open={initiationModalOpen}
             customer={selectedCustomer}
-            onClose={() => setInitiationModalOpen(false)}
+            onClose={handleCloseInitiationModal}
+            onCloseIconClick={handleCloseIconClick}
           />
         )}
 
         <CallEndModal
           open={endModalOpen}
           onClose={() => setEndModalOpen(false)}
+          onConfirm={handleEndCall}
         />
       </div>
     </div>
