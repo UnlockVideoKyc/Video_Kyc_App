@@ -13,7 +13,6 @@ import {
 import {
   Groups as GroupsIcon,
   History as HistoryIcon,
-  EditNote as EditNoteIcon,
   Search as SearchIcon,
 } from "@mui/icons-material";
 
@@ -34,8 +33,6 @@ import getPastKycCalls from "../api/kyc.api";
 import searchPastKycCalls from "../api/pastsearch";
 
 /* ---------------- debounce hook ---------------- */
-const api_base_url = import.meta.env.VITE_API_BASE_URL;
-// const api_base_url = `${API_BASE_URL}/api/kyc`;
 const useDebounce = (value, delay = 400) => {
   const [debounced, setDebounced] = useState(value);
 
@@ -60,7 +57,7 @@ const CustomerTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  /* ✅ MODAL STATES */
+  /* MODALS */
   const [initiationModalOpen, setInitiationModalOpen] = useState(false);
   const [endModalOpen, setEndModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -79,7 +76,7 @@ const CustomerTable = () => {
     setMissedCount(missed.data?.length ?? 0);
   }, []);
 
-  /* ---------------- FETCH LIVE / MISSED ---------------- */
+  /* ---------------- FETCH WAITLIST ---------------- */
   const fetchWaitlistData = useCallback(async () => {
     setLoading(true);
     try {
@@ -101,59 +98,44 @@ const CustomerTable = () => {
     try {
       const res = await getPastKycCalls();
       setCustomers(res.data || []);
+    } catch {
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
   /* ---------------- SEARCH ---------------- */
-
   const handleSearch = useCallback(async () => {
-    // ✅ SEARCH CLEARED
     if (debouncedSearch.trim().length < 2) {
       setCurrentPage(1);
-
-      // 🔁 reload correct list
-      if (activeTab === "Video KYC Waitlist") {
-        fetchWaitlistData();
-      } else if (activeTab === "Past KYC Calls") {
-        fetchPastKyc();
-      }
-
+      activeTab === "Past KYC Calls" ? fetchPastKyc() : fetchWaitlistData();
       return;
     }
 
-    // ✅ SEARCH MODE
     setLoading(true);
     setCurrentPage(1);
 
     try {
-      let res;
-
-      if (activeTab === "Past KYC Calls") {
-        res = await searchPastKycCalls(debouncedSearch);
-      } else {
-        res = await searchKyc(debouncedSearch, activeView);
-      }
+      const res =
+        activeTab === "Past KYC Calls"
+          ? await searchPastKycCalls(debouncedSearch)
+          : await searchKyc(debouncedSearch, activeView);
 
       setCustomers(res.data || []);
-    } catch (err) {
-      console.error(err);
+    } catch {
       setCustomers([]);
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, activeTab, activeView, fetchWaitlistData, fetchPastKyc]);
+  }, [debouncedSearch, activeTab, activeView, fetchPastKyc, fetchWaitlistData]);
 
   /* ---------------- TAB CHANGE ---------------- */
   const handleTabChange = (_, tab) => {
     setActiveTab(tab);
     setSearch("");
     setCurrentPage(1);
-
-    if (tab === "Video KYC Waitlist") {
-      setActiveView("live");
-    }
+    if (tab === "Video KYC Waitlist") setActiveView("live");
   };
 
   /* ---------------- EFFECTS ---------------- */
@@ -161,7 +143,7 @@ const CustomerTable = () => {
     if (activeTab === "Video KYC Waitlist") {
       fetchCounts();
       fetchWaitlistData();
-    } else if (activeTab === "Past KYC Calls") {
+    } else {
       fetchPastKyc();
     }
   }, [activeTab, fetchCounts, fetchWaitlistData, fetchPastKyc]);
@@ -180,86 +162,29 @@ const CustomerTable = () => {
     setInitiationModalOpen(true);
   };
 
-  const handleCloseInitiationModal = () => {
-    setInitiationModalOpen(false);
-  };
-
-  const handleCloseIconClick = () => {
-    setInitiationModalOpen(false);
-    setEndModalOpen(true);
-  };
-
-  const handleEndCall = () => {
-    setEndModalOpen(false);
-  };
-
   return (
     <div className="card">
       <div className="card-body">
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: {
-              xs: "column",
-              sm: "column",
-              md: "row", // ✅ 1024px now becomes single row
-            },
-            justifyContent: "space-between",
-            alignItems: "center",
-            // mx: 4,
-            gap: 1,
-          }}
-        >
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            variant="standard" // 🔥 remove scrollable
-            sx={{
-              minHeight: 34,
-              "& .MuiTabs-flexContainer": {
-                flexWrap: "nowrap",
-                gap: 2,
-              },
-              "& .MuiTabs-indicator": {
-                height: 3,
-              },
-            }}
-          >
+        {/* -------- TABS + SEARCH -------- */}
+        <Box display="flex" justifyContent="space-between" flexWrap="wrap" gap={2}>
+          <Tabs value={activeTab} onChange={handleTabChange}>
             <Tab
               value="Video KYC Waitlist"
               label="Video KYC Waitlist"
               icon={<GroupsIcon />}
               iconPosition="start"
-              sx={{
-                minHeight: 34,
-                textTransform: "none",
-                flexShrink: 1,
-                minWidth: "unset",
-                whiteSpace: "wrap",
-              }}
             />
-
             <Tab
               value="Past KYC Calls"
               label="Past KYC Calls"
               icon={<HistoryIcon />}
               iconPosition="start"
-              sx={{
-                flexDirection: "row",
-                gap: "3px",
-                textTransform: "none",
-                minHeight: 34,
-                "& .MuiTab-iconWrapper": {
-                  marginBottom: "0 !important",
-                },
-              }}
             />
           </Tabs>
 
-          {/* Search */}
           <TextField
             size="small"
-            placeholder="Search customers..."
+            placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             InputProps={{
@@ -269,45 +194,28 @@ const CustomerTable = () => {
                 </InputAdornment>
               ),
             }}
-            sx={{
-              width: {
-                xs: "100%",
-                sm: "100%",
-                md: "260px", // fits 1024
-              },
-              flexShrink: 0, // 🔥 search does NOT shrink
-            }}
           />
         </Box>
 
-        <Box sx={{ borderBottom: 1, borderColor: "divider", my: 3 }} />
+        <Box my={3} />
 
+        {/* -------- VIDEO KYC -------- */}
         {activeTab === "Video KYC Waitlist" && (
           <>
             <ActionButtons
               activeView={activeView}
+              liveCount={liveCount}
+              missedCount={missedCount}
               onViewChange={(view) => {
                 setActiveView(view);
                 setSearch("");
                 setCurrentPage(1);
               }}
-              liveCount={liveCount}
-              missedCount={missedCount}
-              onRefresh={() => {
-                setSearch("");
-                setCurrentPage(1);
-                fetchWaitlistData();
-              }}
+              onRefresh={() => fetchWaitlistData()}
             />
 
             {loading ? (
               <Typography align="center">Loading...</Typography>
-            ) : customers.length === 0 ? (
-              <Box textAlign="center" py={5}>
-                <Typography colSpan={6} align="center">
-                  No records found
-                </Typography>
-              </Box>
             ) : activeView === "live" ? (
               <LiveScheduleTable
                 customers={paginatedCustomers}
@@ -329,24 +237,34 @@ const CustomerTable = () => {
           </>
         )}
 
+        {/* -------- PAST KYC -------- */}
         {activeTab === "Past KYC Calls" && (
-          <PastKycCallsTable data={customers} loading={loading} />
+          <>
+            <PastKycCallsTable
+              data={paginatedCustomers}
+              loading={loading}
+            />
+
+            <Pagination
+              currentPage={currentPage}
+              totalItems={customers.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
+          </>
         )}
 
-        {/* MODALS */}
         {selectedCustomer && (
           <CallInitiationModal
             open={initiationModalOpen}
-            onClose={handleCloseInitiationModal}
-            onCloseIconClick={handleCloseIconClick}
             customer={selectedCustomer}
+            onClose={() => setInitiationModalOpen(false)}
           />
         )}
 
         <CallEndModal
           open={endModalOpen}
           onClose={() => setEndModalOpen(false)}
-          onConfirm={handleEndCall}
         />
       </div>
     </div>
