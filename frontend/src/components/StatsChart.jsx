@@ -1,221 +1,240 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from "react";
 import { fetchDashboardData } from "../api/dashboard.api";
-import { 
-  Box, 
-  Card, 
-  CardContent, 
+import {
+  Box,
+  Card,
+  CardContent,
   useMediaQuery,
   useTheme
-} from '@mui/material';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Pie } from 'react-chartjs-2';
-import { ArrowDropDown as ChevronDown } from '@mui/icons-material';
+} from "@mui/material";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { Pie } from "react-chartjs-2";
+import { ArrowDropDown as ChevronDown } from "@mui/icons-material";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
+/* =========================
+   FILTER CONFIG
+========================= */
+const FILTERS = [
+  { label: "Today", value: "today" },
+  { label: "This Week", value: "week" },
+  { label: "This Month", value: "month" },
+  { label: "All", value: "all" }
+];
+
 const StatsChart = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState("Today");
-  const [chartValues, setChartValues] = useState({
+  const [selectedFilter, setSelectedFilter] = useState(FILTERS[0]);
+  const [stats, setStats] = useState({
     approved: 0,
     rejected: 0,
-    discrepancy: 0,
+    discrepancy: 0
   });
 
-
+  /* =========================
+     FETCH DASHBOARD DATA
+  ========================= */
   useEffect(() => {
-  const loadDashboard = async () => {
-    try {
-      const map = {
-        Today: "today",
-        "This Week": "week",
-        "This Month": "month",
-          All: "all",
-      };
+    const loadDashboard = async () => {
+      try {
+        const res = await fetchDashboardData(selectedFilter.value);
 
-      const range = map[selectedOption] || "today";
+        setStats({
+          approved: Number(res?.data?.approved) || 0,
+          rejected: Number(res?.data?.rejected) || 0,
+          discrepancy: Number(res?.data?.discrepancy) || 0
+        });
+      } catch (err) {
+        console.error("Dashboard fetch failed", err);
+      }
+    };
 
-      const res = await fetchDashboardData(range);
+    loadDashboard();
+  }, [selectedFilter]);
 
-   setChartValues({
-  approved: Number(res?.data?.approved) || 0,
-  rejected: Number(res?.data?.rejected) || 0,
-  discrepancy: Number(res?.data?.discrepancy) || 0,
-});
-
-    } catch (error) {
-      console.error("Dashboard error:", error);
-    }
-  };
-
-  loadDashboard();
-}, [selectedOption]);
-
+  /* =========================
+     CHART CONFIG
+  ========================= */
   const chartData = {
     labels: ["Approved", "Rejected", "Discrepancy"],
-    datasets: [{
-      data: [
-        chartValues.approved,
-        chartValues.rejected,
-        chartValues.discrepancy
-      ],
-      backgroundColor: ["#28a745", "#dc3545", "#ffc107"],
-      borderWidth: 0,
-      hoverOffset: 0
-    }]
+    datasets: [
+      {
+        data: [
+          stats.approved,
+          stats.rejected,
+          stats.discrepancy
+        ],
+        backgroundColor: ["#28a745", "#dc3545", "#ffc107"],
+        borderWidth: 0
+      }
+    ]
   };
 
-  const total = chartData.datasets[0].data.reduce(
-    (sum, item) => sum + item,
-    0
-  );
-
-  const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
-  const selectOption = (option) => {
-    setSelectedOption(option);
-    setDropdownOpen(false);
-  };
+  const total =
+    stats.approved + stats.rejected + stats.discrepancy;
 
   return (
-    <Card sx={{ 
-      height: '100%',
-      boxShadow: 'none',
-      border: '1px solid #e0e0e0',
-      borderRadius: '8px'
-    }}>
-      <CardContent sx={{ padding: '16px' }}>
-        {/* Header */}
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          marginBottom: '16px'
-        }}>
-          <Box component="h5" sx={{ 
-            margin: 0,
-            fontSize: '1.25rem',
-            fontWeight: 500,
-            color: '#212529'
-          }}>
+    <Card
+      sx={{
+        height: "100%",
+        border: "1px solid #e0e0e0",
+        borderRadius: "8px",
+        boxShadow: "none"
+      }}
+    >
+      <CardContent sx={{ p: 2 }}>
+        {/* ================= HEADER ================= */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2
+          }}
+        >
+          <Box component="h5" sx={{ m: 0, fontSize: "1.25rem" }}>
             Work Dashboard
           </Box>
 
-          <Box sx={{ position: 'relative' }}>
-            <button 
-              onClick={toggleDropdown}
+          <Box sx={{ position: "relative" }}>
+            <button
+              onClick={() => setDropdownOpen((p) => !p)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                border: '1px solid #dee2e6',
-                background: 'transparent',
-                padding: '0.25rem 0.75rem',
-                borderRadius: '4px',
-                fontSize: '14px',
-                cursor: 'pointer'
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+                border: "1px solid #dee2e6",
+                background: "transparent",
+                padding: "4px 12px",
+                borderRadius: "4px",
+                fontSize: "14px",
+                cursor: "pointer"
               }}
             >
-              {selectedOption}
+              {selectedFilter.label}
               <ChevronDown fontSize="small" />
             </button>
 
             {dropdownOpen && (
-              <div style={{
-                position: 'absolute',
-                right: 0,
-                top: '100%',
-                minWidth: '120px',
-                backgroundColor: '#fff',
-                border: '1px solid #dee2e6',
-                borderRadius: '4px',
-                marginTop: '4px',
-                zIndex: 10
-              }}>
-                {["Today", "This Week", "This Month", "All"].map(option => (
+              <Box
+                sx={{
+                  position: "absolute",
+                  right: 0,
+                  top: "100%",
+                  mt: "4px",
+                  border: "1px solid #dee2e6",
+                  borderRadius: "4px",
+                  backgroundColor: "#fff",
+                  zIndex: 10,
+                  minWidth: "140px"
+                }}
+              >
+                {FILTERS.map((filter) => (
                   <button
-                    key={option}
-                    onClick={() => selectOption(option)}
+                    key={filter.value}
+                    onClick={() => {
+                      setSelectedFilter(filter);
+                      setDropdownOpen(false);
+                    }}
                     style={{
-                      width: '100%',
-                      padding: '0.5rem 1rem',
-                      textAlign: 'left',
-                      border: 'none',
-                      background: selectedOption === option ? '#f8f9fa' : 'transparent',
-                      cursor: 'pointer'
+                      width: "100%",
+                      padding: "8px 12px",
+                      textAlign: "left",
+                      border: "none",
+                      background:
+                        selectedFilter.value === filter.value
+                          ? "#f8f9fa"
+                          : "transparent",
+                      cursor: "pointer"
                     }}
                   >
-                    {option}
+                    {filter.label}
                   </button>
                 ))}
-              </div>
+              </Box>
             )}
           </Box>
         </Box>
 
-        <hr style={{ marginBottom: '16px' }} />
+        <hr />
 
-        {/* Pie Chart */}
-         <Box sx={{ height: isMobile ? '220px' : '280px', position: 'relative' }}>
+        {/* ================= PIE CHART ================= */}
+        <Box
+          sx={{
+            height: isMobile ? "220px" : "280px",
+            position: "relative"
+          }}
+        >
           <Pie
             data={chartData}
             options={{
               maintainAspectRatio: false,
-              cutout: isMobile ? '60%' : '50%',
+              cutout: isMobile ? "60%" : "50%",
               plugins: {
                 legend: { display: false },
                 tooltip: {
-                  enabled: true,
                   callbacks: {
-                    label: (context) => `${context.label}: ${context.parsed}`
+                    label: (ctx) =>
+                      `${ctx.label}: ${ctx.parsed}`
                   }
                 }
               }
             }}
           />
 
-          {/* Center text */}
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            textAlign: 'center'
-          }}>
+          {/* Center Text */}
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              textAlign: "center"
+            }}
+          >
             <h2 style={{ margin: 0 }}>{total}</h2>
-            <small>{selectedOption}</small>
-          </div>
-        </Box> 
+            <small>{selectedFilter.label}</small>
+          </Box>
+        </Box>
 
-        {/* ✅ FOOTER (Approved / Rejected / Discrepancy) */}
-        <Box sx={{ 
-          display: 'flex',
-          justifyContent: 'space-around',
-          marginTop: '16px',
-          paddingTop: '16px',
-          borderTop: '1px solid #e0e0e0',
-          flexWrap: isMobile ? 'wrap' : 'nowrap',
-          gap: isMobile ? '8px' : 0
-        }}>
-          {chartData.labels.map((label, index) => (
-            <Box key={index} sx={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{
-                width: '12px',
-                height: '12px',
-                borderRadius: '50%',
-                backgroundColor: chartData.datasets[0].backgroundColor[index],
-                marginRight: '8px'
-              }} />
-              <small style={{ marginRight: '4px' }}>{label}:</small>
-              <small style={{ fontWeight: 'bold' }}>
-                {chartData.datasets[0].data[index]}
+        {/* ================= FOOTER ================= */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-around",
+            mt: 2,
+            pt: 2,
+            borderTop: "1px solid #e0e0e0",
+            flexWrap: isMobile ? "wrap" : "nowrap",
+            gap: isMobile ? "8px" : 0
+          }}
+        >
+          {chartData.labels.map((label, i) => (
+            <Box
+              key={label}
+              sx={{ display: "flex", alignItems: "center" }}
+            >
+              <Box
+                sx={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  backgroundColor:
+                    chartData.datasets[0].backgroundColor[i],
+                  mr: 1
+                }}
+              />
+              <small>{label}:</small>
+              <small style={{ fontWeight: "bold", marginLeft: 4 }}>
+                {chartData.datasets[0].data[i]}
               </small>
             </Box>
           ))}
         </Box>
-
       </CardContent>
     </Card>
   );
