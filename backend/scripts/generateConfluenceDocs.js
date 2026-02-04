@@ -35,13 +35,16 @@ async function confluenceFetch(url, options = {}) {
 
 async function getPageByTitle(title) {
   const res = await confluenceFetch(
-    `${CONFLUENCE_BASE_URL}/rest/api/content?title=${encodeURIComponent(
-      title
-    )}&spaceKey=${CONFLUENCE_SPACE_KEY}`
+    `${CONFLUENCE_BASE_URL}/rest/api/content` +
+    `?title=${encodeURIComponent(title)}` +
+    `&spaceKey=${CONFLUENCE_SPACE_KEY}` +
+    `&expand=version`
   );
+
   const data = await res.json();
   return data.results && data.results[0];
 }
+
 
 function markdownToConfluenceHtml(md) {
   return md
