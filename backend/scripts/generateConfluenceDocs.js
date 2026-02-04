@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { marked } = require("marked");
 
 const {
   CONFLUENCE_BASE_URL,
@@ -10,11 +11,6 @@ const {
   GITHUB_SHA
 } = process.env;
 
-/**
- * IMPORTANT:
- * Always resolve docs relative to THIS FILE
- * not process.cwd()
- */
 const docsDir = path.join(__dirname, "../docs");
 
 const authHeader =
@@ -36,27 +32,16 @@ async function confluenceFetch(url, options = {}) {
 async function getPageByTitle(title) {
   const res = await confluenceFetch(
     `${CONFLUENCE_BASE_URL}/rest/api/content` +
-    `?title=${encodeURIComponent(title)}` +
-    `&spaceKey=${CONFLUENCE_SPACE_KEY}` +
-    `&expand=version`
+      `?title=${encodeURIComponent(title)}` +
+      `&spaceKey=${CONFLUENCE_SPACE_KEY}` +
+      `&expand=version`
   );
-
   const data = await res.json();
-  return data.results && data.results[0];
-}
-
-
-function markdownToConfluenceHtml(md) {
-  return md
-    .replace(/^### (.*$)/gim, "<h3>$1</h3>")
-    .replace(/^## (.*$)/gim, "<h2>$1</h2>")
-    .replace(/^# (.*$)/gim, "<h1>$1</h1>")
-    .replace(/^\- (.*$)/gim, "<li>$1</li>")
-    .replace(/\n{2,}/g, "<br/><br/>");
+  return data.results?.[0];
 }
 
 async function createOrUpdatePage(title, body) {
-  const existingPage = await getPageByTitle(title);
+  const existing = await getPageByTitle(title);
 
   const payload = {
     type: "page",
@@ -71,14 +56,12 @@ async function createOrUpdatePage(title, body) {
     }
   };
 
-  if (existingPage) {
-    payload.id = existingPage.id;
-    payload.version = {
-      number: existingPage.version.number + 1
-    };
+  if (existing) {
+    payload.id = existing.id;
+    payload.version = { number: existing.version.number + 1 };
 
     await confluenceFetch(
-      `${CONFLUENCE_BASE_URL}/rest/api/content/${existingPage.id}`,
+      `${CONFLUENCE_BASE_URL}/rest/api/content/${existing.id}`,
       {
         method: "PUT",
         body: JSON.stringify(payload)
@@ -102,10 +85,9 @@ async function run() {
     if (!file.endsWith(".md")) continue;
 
     const title = file.replace(".md", "");
-    const filePath = path.join(docsDir, file);
+    const md = fs.readFileSync(path.join(docsDir, file), "utf8");
 
-    const rawContent = fs.readFileSync(filePath, "utf8");
-    const htmlContent = markdownToConfluenceHtml(rawContent);
+    const html = marked.parse(md);
 
     const pageBody = `
 <h2>Latest Update</h2>
@@ -114,11 +96,11 @@ async function run() {
   <li><b>Updated:</b> ${new Date().toUTCString()}</li>
 </ul>
 <hr/>
-${htmlContent}
+${html}
 `;
 
     await createOrUpdatePage(title, pageBody);
-    console.log(`✔ Updated page: ${title}`);
+    console.log(`✔ Updated: ${title}`);
   }
 }
 
