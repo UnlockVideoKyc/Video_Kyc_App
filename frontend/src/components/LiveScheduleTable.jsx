@@ -72,7 +72,7 @@ const LiveScheduleTable = ({ customers = [], onInitiateCall }) => {
                     textTransform: "none",
                     boxShadow: "none",
                   }}  
-                  onClick={() => onInitiateCall(customers)}
+                  onClick={() => onInitiateCall(c)}
                 >
                   Initiate Call
                 </Button>

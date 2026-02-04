@@ -39,6 +39,7 @@ import VideoCallCustomerSection from "../../components/VideoCallCustomerSection"
 import { Box, Typography, Divider, Button, TextField } from '@mui/material';
 import { Check, Close, InfoOutlined } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from "react-redux";
 
 const QandA = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -48,6 +49,12 @@ const QandA = () => {
     3: { status: null, showOptions: false },
     4: { status: null, showOptions: false }
   });
+
+  //! via redux
+    const customer = useSelector(
+      (state) => state.customer.activeCustomer
+    );
+    console.log("Redux customer:", customer);
 
   const navigate = useNavigate();
 
@@ -182,7 +189,7 @@ const QandA = () => {
       <div className="row">
         {/* <HorizontalStepper/> */}
         <div className={isFullScreen ? "col-md-9" : "col-md-3"}>
-          <VideoCallAgentSection onFullScreenToggle={handleFullScreenToggle}/>
+          <VideoCallAgentSection customer={customer} onFullScreenToggle={handleFullScreenToggle}/>
         </div>
         {!isFullScreen && (
           <div className="col-md-3">

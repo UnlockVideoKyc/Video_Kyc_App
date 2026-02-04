@@ -40,6 +40,7 @@ import { Box, Typography, Divider, Button, TextField } from '@mui/material';
 import { CameraAltOutlined, Check } from '@mui/icons-material';
 import dummyImage from "../../assets/dummy.png";
 import { useNavigate } from 'react-router-dom'; 
+import { useSelector } from "react-redux";
 
 const CheckLiveFace = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -50,6 +51,12 @@ const CheckLiveFace = () => {
   const handleFullScreenToggle = (fullScreenState) => {
     setIsFullScreen(fullScreenState);
   };
+
+  //! via redux
+    const customer = useSelector(
+      (state) => state.customer.activeCustomer
+    );
+    console.log("Redux customer:", customer);
 
   const handleNextClick = () => {
     navigate('/check-aadhar-face'); 
@@ -72,7 +79,7 @@ const CheckLiveFace = () => {
       <div className="row">
         {/* <HorizontalStepper/> */}
         <div className={isFullScreen ? "col-md-9" : "col-md-3"}>
-          <VideoCallAgentSection onFullScreenToggle={handleFullScreenToggle}/>
+          <VideoCallAgentSection customer={customer} onFullScreenToggle={handleFullScreenToggle}/>
         </div>
         {!isFullScreen && (
           <div className="col-md-3">

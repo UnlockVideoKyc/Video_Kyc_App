@@ -1,5 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import PastKycCallsTable from "../pages/AgentDashboard/PastKycCallsTable";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setActiveCustomer } from "../store/customerSlice";
 
 import {
   Box,
@@ -65,6 +68,35 @@ const CustomerTable = () => {
   /* ---------------- COUNTS ---------------- */
   const [liveCount, setLiveCount] = useState(0);
   const [missedCount, setMissedCount] = useState(0);
+
+  //! via redux store to get Customer info
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleStartVideoCall = async (customer) => {
+  if (!customer?.VcipId) {
+    console.error("Invalid customer:", customer);
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/kyc/customer/info/${customer.VcipId}`
+    );
+
+    if (!res.ok) throw new Error("API failed");
+
+    const json = await res.json();
+
+    if (json.success) {
+      dispatch(setActiveCustomer(json.data)); //  Redux set here
+      navigate("/check-location");             //    navigate AFTER redux
+    }
+  } catch (err) {
+    console.error("Failed to start call:", err);
+  }
+};
 
   /* ---------------- FETCH COUNTS ---------------- */
   const fetchCounts = useCallback(async () => {
@@ -179,7 +211,7 @@ const CustomerTable = () => {
     <div className="card">
       <div className="card-body">
         {/* -------- TABS + SEARCH -------- */}
-             <Box
+        <Box
           sx={{
             display: "flex",
             flexDirection: {
@@ -306,10 +338,7 @@ const CustomerTable = () => {
         {/* -------- PAST KYC -------- */}
         {activeTab === "Past KYC Calls" && (
           <>
-            <PastKycCallsTable
-              data={paginatedCustomers}
-              loading={loading}
-            />
+            <PastKycCallsTable data={paginatedCustomers} loading={loading} />
 
             <Pagination
               currentPage={currentPage}
@@ -327,6 +356,7 @@ const CustomerTable = () => {
             customer={selectedCustomer}
             onClose={handleCloseInitiationModal}
             onCloseIconClick={handleCloseIconClick}
+            onStartCall={() => handleStartVideoCall(selectedCustomer)}
           />
         )}
 

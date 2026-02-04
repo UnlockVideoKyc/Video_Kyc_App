@@ -204,3 +204,47 @@ exports.searchPastKyc = async (query) => {
 
   return rows;
 };
+
+
+//get customer details
+exports.getCustomerForVideoCall = async (vcipId) => {
+  const [rows] = await db.query(
+    `
+    SELECT
+      -- Waitlist data
+      w.WaitlistId,
+      w.VcipId,
+      w.CustomerName,
+      w.ClientName,
+      w.MobileNumber,
+      w.CreatedAt AS WaitlistCreatedAt,
+
+      -- Customer master data
+      c.CustomerId,
+      c.ApplicantName,
+      c.FatherName,
+      c.Gender,
+      c.PanNumber,
+      c.Email,
+      c.AadharNumber,
+      c.CurrentAddress,
+      c.PermanentAddress,
+      c.DOB,
+      c.LiveImage,
+      c.AadharFaceImage,
+      c.PanImage,
+      c.PanFaceImage,
+      c.Reference1
+
+    FROM Video_Kyc_Waitlist w
+    INNER JOIN CustomerDetails c
+      ON c.MobileNumber = w.MobileNumber
+
+    WHERE w.VcipId = ?
+    LIMIT 1
+    `,
+    [vcipId]
+  );
+
+  return rows.length ? rows[0] : null;
+};

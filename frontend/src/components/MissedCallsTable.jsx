@@ -11,7 +11,7 @@ const formatDate = (date) => {
   });
 };
 
-const MissedCallsTable = ({ customers, onInitiateCall }) => {
+const MissedCallsTable = ({ customers = [], onInitiateCall }) => {
   return (
     <div className="table-responsive">
       <table className="table table-hover align-middle">

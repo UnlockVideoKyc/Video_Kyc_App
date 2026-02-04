@@ -19,9 +19,11 @@ import {
 } from "@mui/icons-material";
 import dummyImage from "../assets/dummy.png";
 import CallEndModal from "./CallEndModal";
+import {useNavigate} from 'react-router-dom';
 
 
-const VideoCallAgentSection = ({ onFullScreenToggle }) => {
+const VideoCallAgentSection = ({customer, onFullScreenToggle }) => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -30,6 +32,11 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
   const [userTooltipOpen, setUserTooltipOpen] = useState(false);
   const [locationTooltipOpen, setLocationTooltipOpen] = useState(false);
   const [wifiTooltipOpen, setwifiTooltipOpen] = useState(false);
+
+  //to store selected messages
+  const [selectedMessages, setSelectedMessages] = useState([]);
+
+  const c = customer && typeof customer === "object" ? customer : {};
 
   const toggleFullScreen = () => {
     const newFullScreenState = !isFullScreen;
@@ -51,6 +58,7 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
   const handleEndCall = (selectedOptions, remark) => {
     console.log('Ending call with:', { selectedOptions, remark });
     setEndCallModalOpen(false);
+    navigate('/work-dashboard');
   };
 
   const handleUserTooltipOpen = () => {
@@ -86,6 +94,34 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
   };
   const togglewifiTooltip = () => {
     setwifiTooltipOpen(!wifiTooltipOpen);
+  };
+
+  //format DOB remove time part
+  const formatDOB = (dob) => {
+    if (!dob) return "-";
+    return new Date(dob).toISOString().split("T")[0];
+  };
+
+  const predefinedMessages = [
+    "Poor Internet connection detected, please connect to another network.",
+    "Request you to stay stable in front of the camera",
+    "Please follow the instructions displayed on your screen",
+  ];
+
+  const handleMessageToggle = (text) => {
+    setSelectedMessages((prev) => {
+      let updated;
+
+      if (prev.includes(text)) {
+        updated = prev.filter((m) => m !== text);
+      } else {
+        updated = [...prev, text];
+      }
+
+      // Update textarea content
+      setMessage(updated.join("\n"));
+      return updated;
+    });
   };
 
   return (
@@ -165,23 +201,24 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
                   }}>
                     Customer Details
                   </Box>
-                  <Box component="p" sx={{ margin: "4px 0", fontSize: '14px' }}>
-                    <strong>Name:</strong> Riddhi Jani
+                  <Box component="p" sx={{ margin: "4px 0", fontSize: "14px" }}>
+                    <strong>Name:</strong>{" "}
+                    {c.ApplicantName || c.CustomerName || "-"}
                   </Box>
-                  <Box component="p" sx={{ margin: "4px 0", fontSize: '14px' }}>
-                    <strong>Father Name:</strong> Yogesh Jani
+                  <Box component="p" sx={{ margin: "4px 0", fontSize: "14px" }}>
+                    <strong>Father Name:</strong> {c.FatherName || "-"}
                   </Box>
-                  <Box component="p" sx={{ margin: "4px 0", fontSize: '14px' }}>
-                    <strong>Date of Birth:</strong> 31-12-1999
+                  <Box component="p" sx={{ margin: "4px 0", fontSize: "14px" }}>
+                    <strong>Date of Birth:</strong> {formatDOB(c.DOB)}
                   </Box>
-                  <Box component="p" sx={{ margin: "4px 0", fontSize: '14px' }}>
-                    <strong>Gender:</strong> Female
+                  <Box component="p" sx={{ margin: "4px 0", fontSize: "14px" }}>
+                    <strong>Gender:</strong> {c.Gender || "-"}
                   </Box>
-                  <Box component="p" sx={{ margin: "4px 0", fontSize: '14px' }}>
-                    <strong>Email ID:</strong> jani@gmail.com
+                  <Box component="p" sx={{ margin: "4px 0", fontSize: "14px" }}>
+                    <strong>Email ID:</strong> {c.Email || "-"}
                   </Box>
-                  <Box component="p" sx={{ margin: "4px 0", fontSize: '14px' }}>
-                    <strong>Mobile No:</strong> 8754588129
+                  <Box component="p" sx={{ margin: "4px 0", fontSize: "14px" }}>
+                    <strong>Mobile No:</strong> {c.MobileNumber || "-"}
                   </Box>
                 </Box>
               }
@@ -491,20 +528,24 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
         {/* Call Information */}
         <Box sx={{ p: { xs: '8px', sm: '12px' }, backgroundColor: "white" }}>
           <Box sx={{ marginBottom: "1px" }}>
-            {[
-              "Poor Internet connection detected, please connect to another network.",
-              "Request you to stay stable in front of the camera",
-              "Please follow the instructions displayed on your screen"
-            ].map((text, index) => (
+            {predefinedMessages.map((text, index) => (
               <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start', gap: '8px', mb: '8px' }}>
-                <Box sx={{
+                {/* <Box sx={{
                   width: "8px",
                   height: "8px",
                   backgroundColor: "#1C43A6",
                   minWidth: "8px",
                   marginTop: "4px",
                   borderRadius: '50%'
-                }} />
+                }} /> */}
+
+                <input
+                  type="checkbox"
+                  checked={selectedMessages.includes(text)}
+                  onChange={() => handleMessageToggle(text)}
+                  style={{ marginTop: "4px" }}
+                />
+
                 <Box
                   component="small"
                   sx={{
@@ -512,8 +553,10 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
                     color: "#212529",
                     fontFamily: "'Inter', sans-serif",
                     lineHeight: "1.4",
-                    fontSize: { xs: '0.8rem', sm: 'inherit' }
+                    fontSize: { xs: '0.8rem', sm: 'inherit' },
+                    cursor: 'pointer',
                   }}
+                  onClick={() => handleMessageToggle(text)}
                 >
                   {text}
                 </Box>

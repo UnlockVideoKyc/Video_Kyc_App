@@ -186,7 +186,7 @@ const CallInitiationModal = ({
               fontSize: { xs: "0.875rem", sm: "1rem" },
             }}
           >
-            VCIP - {customer?.vcpId} - {customer?.customerName}
+            VCIP - {customer?.VcipId} - {customer?.CustomerName}
           </p>
 
           <hr style={{ borderColor: "#A8A8A8", marginBottom: "16px" }} />

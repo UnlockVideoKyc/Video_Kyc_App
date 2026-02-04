@@ -1,5 +1,6 @@
 
 const kycRepo = require("../repositories/kyc.repo");
+const kycService = require("../services/kyc.service");
 
 exports.getVideoKycWaitlist = async (req, res) => {
   try {
@@ -147,6 +148,25 @@ exports.searchPastKyc = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error"
+    });
+  }
+};
+
+// Fetch customer details for video call
+exports.getCustomerForVideoCall = async (req, res) => {
+  try {
+    const { vcipId } = req.params;
+
+    const data = await kycService.fetchCustomerForCall(vcipId);
+
+    res.status(200).json({
+      success: true,
+      data
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message
     });
   }
 };
