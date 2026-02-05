@@ -82,6 +82,22 @@ const CallInitiationModal = ({
     };
   }, [isProcessing]);
 
+  const allPermissionsGranted = micEnabled && cameraEnabled && locationEnabled;
+
+  useEffect(() => {
+  if (!allPermissionsGranted) {
+    setIsProcessing(false);
+    setIsSuccess(false);
+    setIsVideoReady(false);
+    setProgressValue(0);
+    
+    if (videoRef.current?.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+    }
+  }
+}, [allPermissionsGranted]);
+
   useEffect(() => {
     if (isVideoReady && cameraEnabled) {
       navigator.mediaDevices
@@ -103,7 +119,42 @@ const CallInitiationModal = ({
     };
   }, [isVideoReady, cameraEnabled]);
 
-  const allPermissionsGranted = micEnabled && cameraEnabled && locationEnabled;
+
+  // ADD THIS NEW EFFECT BELOW YOUR OTHER EFFECTS
+useEffect(() => {
+  const syncPermissions = async () => {
+    try {
+      // 1. Sync Camera
+      const cameraStatus = await navigator.permissions.query({ name: "camera" });
+      setCameraEnabled(cameraStatus.state === "granted");
+      cameraStatus.onchange = () => {
+        setCameraEnabled(cameraStatus.state === "granted");
+      };
+
+      // 2. Sync Microphone
+      const micStatus = await navigator.permissions.query({ name: "microphone" });
+      setMicEnabled(micStatus.state === "granted");
+      micStatus.onchange = () => {
+        setMicEnabled(micStatus.state === "granted");
+      };
+
+      // 3. Sync Location
+      const geoStatus = await navigator.permissions.query({ name: "geolocation" });
+      setLocationEnabled(geoStatus.state === "granted");
+      geoStatus.onchange = () => {
+        setLocationEnabled(geoStatus.state === "granted");
+      };
+    } catch (err) {
+      console.error("Permissions API not fully supported", err);
+    }
+  };
+
+  if (open) {
+    syncPermissions();
+  }
+}, [open]);
+
+  // const allPermissionsGranted = micEnabled && cameraEnabled && locationEnabled;
 
   const handleStartCall = () => {
     if (!allPermissionsGranted) {
@@ -352,9 +403,10 @@ const CallInitiationModal = ({
           <Button
             variant="contained"
             onClick={isVideoReady ? handleSubmit : handleStartCall}
+            // This logic now prevents clicking if permissions are revoked 
+            // at ANY stage of the process.
             disabled={
-              (!allPermissionsGranted && !isProcessing) ||
-              (isProcessing && !isVideoReady)
+              !allPermissionsGranted || (isProcessing && !isVideoReady)
             }
             fullWidth
             sx={{
@@ -369,16 +421,16 @@ const CallInitiationModal = ({
               },
             }}
           >
-            {isProcessing
-              ? isVideoReady
-                ? "Submit"
+          {isProcessing
+            ? isVideoReady
+              ? "Submit"
                 : "Processing..."
-              : "Start Processing"}
+                  : "Start Processing"}
           </Button>
         </div>
       </Box>
     </Modal>
   );
 };
+export default CallInitiationModal;  
 
-export default CallInitiationModal;
