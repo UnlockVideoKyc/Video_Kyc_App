@@ -2,30 +2,45 @@ const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
-const DIFF_FILE = path.join(__dirname, "../docs/context/diff.txt");
+const ROOT = path.resolve(__dirname, "..");
+const DIFF_PATH = path.join(ROOT, "docs/context/diff.txt");
 
-function run() {
+fs.mkdirSync(path.dirname(DIFF_PATH), { recursive: true });
+
+function hasPreviousCommit() {
   try {
-    const diff = execSync(
-      "git diff HEAD~1 HEAD -- backend frontend",
-      { encoding: "utf-8" }
-    );
-
-    if (!diff.trim()) {
-      fs.writeFileSync(
-        DIFF_FILE,
-        "NO_RELEVANT_CODE_CHANGES\n"
-      );
-      console.log("ℹ️ No relevant code changes");
-      return;
-    }
-
-    fs.writeFileSync(DIFF_FILE, diff);
-    console.log("✅ Diff written");
-  } catch (e) {
-    console.error("❌ Diff generation failed");
-    process.exit(1);
+    execSync("git rev-parse HEAD~1", { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
   }
 }
 
-run();
+let diff = "";
+
+try {
+  if (hasPreviousCommit()) {
+    diff = execSync(
+      "git diff HEAD~1 HEAD -- backend frontend",
+      { encoding: "utf8" }
+    ).trim();
+  } else {
+    diff = execSync(
+      "git show HEAD --pretty=format:%B",
+      { encoding: "utf8" }
+    ).trim();
+
+    diff =
+      "FIRST COMMIT OR NO PREVIOUS REVISION\n\n" + diff;
+  }
+} catch (err) {
+  console.error("❌ Diff generation failed");
+  process.exit(1);
+}
+
+if (!diff) {
+  diff = "NO_RELEVANT_CODE_CHANGES";
+}
+
+fs.writeFileSync(DIFF_PATH, diff + "\n");
+console.log("✅ Diff written safely");
