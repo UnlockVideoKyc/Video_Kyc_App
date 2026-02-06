@@ -4,6 +4,8 @@ const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
 const DIFF_PATH = path.join(ROOT, "docs/context/diff.txt");
+console.log("🟢 generateDiff.js running in CI");
+
 
 // ensure folder exists
 fs.mkdirSync(path.dirname(DIFF_PATH), { recursive: true });

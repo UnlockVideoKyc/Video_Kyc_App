@@ -4,6 +4,8 @@ const crypto = require("crypto");
 
 const DIFF_PATH = path.join(__dirname, "../docs/context/diff.txt");
 const CONTEXT_PATH = path.join(__dirname, "../docs/context/current.txt");
+console.log("🟢 aiContextFromDiff.js running in CI");
+
 
 const commitSha =
   process.env.GITHUB_SHA ||

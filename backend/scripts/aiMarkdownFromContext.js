@@ -3,6 +3,8 @@ const path = require("path");
 
 const CONTEXT_PATH = path.join(__dirname, "../docs/context/current.txt");
 const OUTPUT_DIR = path.join(__dirname, "../docs/current");
+console.log("🟢 aiMarkdownFromContext.js running in CI");
+
 
 if (!fs.existsSync(CONTEXT_PATH)) {
   throw new Error("❌ context/current.txt not found");
