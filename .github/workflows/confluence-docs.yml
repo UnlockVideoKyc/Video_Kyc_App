@@ -51,6 +51,20 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: node scripts/aiMarkdownFromContext.js
+                              
+
+
+      - name: Debug generated files
+        working-directory: backend
+        run: |
+          echo "=== diff.txt ==="
+          cat docs/context/diff.txt || true
+
+          echo "=== current.txt ==="
+          cat docs/context/current.txt || true
+      
+          echo "=== current docs ==="
+          ls -l docs/current
 
       # 8️⃣ Publish to Confluence
       - name: Publish to Confluence
