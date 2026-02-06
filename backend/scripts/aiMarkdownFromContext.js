@@ -101,3 +101,5 @@ This page confirms the documentation pipeline executed successfully.
     console.log(`✅ docs/current/${section}.md written`);
   }
 })();
+// backend/scripts/aiMarkdownFromContext.js
+// comment only

@@ -74,5 +74,6 @@ app.use((err, req, res, next) => {
   });
 });
 console.log("AI_DOCS_TEST: logging enabled");
+console.log("REAL_PRODUCT_CHANGE");
 
 module.exports = app;

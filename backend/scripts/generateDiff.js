@@ -4,11 +4,11 @@ const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
 const DIFF_PATH = path.join(ROOT, "docs/context/diff.txt");
-console.log("🟢 generateDiff.js executed at", new Date().toISOString());
 
-
+// ensure folder exists
 fs.mkdirSync(path.dirname(DIFF_PATH), { recursive: true });
 
+// helper: check if previous commit exists
 function hasPreviousCommit() {
   try {
     execSync("git rev-parse HEAD~1", { stdio: "ignore" });
@@ -22,27 +22,29 @@ let diff = "";
 
 try {
   if (hasPreviousCommit()) {
+    // ✅ ONLY PRODUCT CODE (IMPORTANT)
     diff = execSync(
-      "git diff HEAD~1 HEAD -- backend frontend",
+      "git diff HEAD~1 HEAD -- backend/src frontend/src",
       { encoding: "utf8" }
     ).trim();
   } else {
+    // first commit / shallow clone
     diff = execSync(
-      "git show HEAD --pretty=format:%B",
+      "git show HEAD -- backend/src frontend/src",
       { encoding: "utf8" }
     ).trim();
-
-    diff =
-      "FIRST COMMIT OR NO PREVIOUS REVISION\n\n" + diff;
   }
 } catch (err) {
   console.error("❌ Diff generation failed");
   process.exit(1);
 }
 
+// fallback if nothing changed
 if (!diff) {
   diff = "NO_RELEVANT_CODE_CHANGES";
 }
 
+// write diff
 fs.writeFileSync(DIFF_PATH, diff + "\n");
-console.log("✅ Diff written safely");
+
+console.log("✅ Diff generated");
