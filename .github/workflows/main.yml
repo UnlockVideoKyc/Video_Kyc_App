@@ -1,0 +1,131 @@
+name: CI/CD – Video KYC (Stable Production)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+# --------------------------------------------------
+# JOB 1: COMMIT MESSAGE VALIDATION
+# --------------------------------------------------
+  commitlint:
+    name: Commitlint Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install commitlint
+        run: npm install --save-dev @commitlint/{cli,config-conventional}
+
+      - name: Run commitlint
+        run: npx commitlint --from=HEAD~1 --to=HEAD
+
+      - name: Slack – Commit Failed
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"❌ Commitlint failed\nRepo: ${{ github.repository }}\nAuthor: ${{ github.actor }}\"}" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+# --------------------------------------------------
+# JOB 2: BUILD FRONTEND (PRODUCTION SAFE)
+# --------------------------------------------------
+  build-frontend:
+    name: Build Frontend (Production)
+    needs: commitlint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci --no-audit --no-fund
+
+      - name: Build frontend (PROD API)
+        run: |
+          cd frontend
+          export VITE_API_BASE_URL=https://yo1.kycstack.in/v1
+          NODE_OPTIONS="--max-old-space-size=4096" npm run build
+
+      - name: Upload frontend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+# --------------------------------------------------
+# JOB 3: DEPLOY ON EC2 (SELF-HOSTED RUNNER)
+# --------------------------------------------------
+  deploy:
+    name: Deploy Backend + Frontend (EC2)
+    needs: build-frontend
+    runs-on: self-hosted
+
+    steps:
+      # ---------- UPDATE SERVER CODE ----------
+      - name: Pull latest code
+        run: |
+          cd /var/www/Video_Kyc_App
+          git fetch origin
+          git reset --hard origin/main
+          git rev-parse --short HEAD
+
+      # ---------- BACKEND DEPLOY ----------
+      - name: Deploy Backend
+        run: |
+          cd /var/www/Video_Kyc_App/backend
+
+          rm -rf node_modules
+          npm install --production
+
+          pm2 stop Video_Kyc_App-backend || true
+          pm2 delete Video_Kyc_App-backend || true
+          pm2 start src/server.js --name Video_Kyc_App-backend
+          pm2 save
+
+      # ---------- BACKEND HEALTH CHECK ----------
+      - name: Verify Backend Health (NGINX + API)
+        run: |
+          sleep 5
+          curl -f http://127.0.0.1:5000/v1/health
+
+      # ---------- FRONTEND DEPLOY ----------
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: /tmp/frontend-dist
+
+      - name: Deploy frontend files
+        run: |
+          sudo rm -rf /var/www/Video_Kyc_App/frontend/dist
+          sudo mkdir -p /var/www/Video_Kyc_App/frontend/dist
+          sudo cp -r /tmp/frontend-dist/* /var/www/Video_Kyc_App/frontend/dist
+
+          sudo nginx -t
+          sudo systemctl reload nginx
+
+      # ---------- SLACK SUCCESS ----------
+      - name: Slack – Deploy Success
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{\"text\":\"✅ Video KYC deployed successfully\nBranch: main\nBy: ${{ github.actor }}\"}" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}

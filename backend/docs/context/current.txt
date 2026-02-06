@@ -1,0 +1,91 @@
+Commit ID: e6e503bd2f15
+
+Commit Message:
+Automated documentation run.
+
+
+Code changes detected:
+
+diff --git a/backend/scripts/aiMarkdownFromContext.js b/backend/scripts/aiMarkdownFromContext.js
+index 515cf9d..57b0ca5 100644
+--- a/backend/scripts/aiMarkdownFromContext.js
++++ b/backend/scripts/aiMarkdownFromContext.js
+@@ -18,16 +18,33 @@ async function callGroq(prompt) {
+   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+     method: "POST",
+     headers: {
+-      "Authorization": `Bearer ${GROQ_API_KEY}`,
++      Authorization: `Bearer ${GROQ_API_KEY}`,
+       "Content-Type": "application/json",
+     },
+     body: JSON.stringify({
+       model: "llama3-70b-8192",
+       messages: [{ role: "user", content: prompt }],
++      temperature: 0.2,
+     }),
+   });
+ 
+   const json = await res.json();
++
++  // 🔍 DEBUG LOG (critical)
++  if (!json.choices || !Array.isArray(json.choices)) {
++    console.error("❌ Groq response invalid:");
++    console.error(JSON.stringify(json, null, 2));
++
++    return `
++⚠️ AI generation failed.
++
++This documentation page was generated, but the AI service did not return content.
++
++Raw context:
++${context}
++`;
++  }
++
+   return json.choices[0].message.content;
+ }
+ 
+@@ -42,8 +59,15 @@ You are generating technical documentation.
+ 
+ Section: ${section}
+ 
+-Based on the following commit context, generate clear, concise markdown documentation.
+-Focus only on relevant changes. If no changes, explain that clearly.
++Project stack:
++- Node.js
++- React
++- MySQL
++- AWS EC2
++- PM2
++
++Based on the commit context below, write clear markdown documentation.
++If no meaningful change exists, explicitly state that.
+ 
+ Context:
+ ${context}
+@@ -51,7 +75,11 @@ ${context}
+ 
+     const md = await callGroq(prompt);
+ 
+-    fs.writeFileSync(path.join(OUT_DIR, `${section}.md`), md.trim());
+-    console.log(`✅ ${section}.md written (AI)`);
++    fs.writeFileSync(
++      path.join(OUT_DIR, `${section}.md`),
++      md.trim()
++    );
++
++    console.log(`✅ ${section}.md written`);
+   }
+ })();
+diff --git a/backend/src/app.js b/backend/src/app.js
+index 835bd67..5c8f02f 100644
+--- a/backend/src/app.js
++++ b/backend/src/app.js
+@@ -73,5 +73,6 @@ app.use((err, req, res, next) => {
+     message: err.message,
+   });
+ });
++console.log("AI_DOCS_TEST: logging enabled");
+ 
+ module.exports = app;
+\ No newline at end of file
