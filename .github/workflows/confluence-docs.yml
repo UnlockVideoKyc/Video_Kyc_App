@@ -1,78 +1,48 @@
-name: AI Docs → Confluence
+name: Confluence Docs
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   docs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout (need previous commit for diff)
-      - name: Checkout repo
+      - name: Checkout full history
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2️⃣ Node
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # 3️⃣ Install deps
-      - name: Install backend deps
+      - name: Install deps
         working-directory: backend
         run: npm install
 
-      # 4️⃣ Generate git diff
       - name: Generate diff
         working-directory: backend
         run: node scripts/generateDiff.js
 
-      # 5️⃣ Generate AI context from diff
-      - name: Generate AI context
+      - name: Generate context
         working-directory: backend
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GITHUB_SHA: ${{ github.sha }}
         run: node scripts/aiContextFromDiff.js
 
-      # 6️⃣ Rotate history (BEFORE overwrite)
-      - name: Rotate docs & context history
+      - name: Generate markdown
         working-directory: backend
-        run: node scripts/rotateDocs.js
-
-      # 7️⃣ Generate AI markdown from context
-      - name: Generate AI markdown
-        working-directory: backend
+        run: node scripts/aiMarkdownFromContext.js
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-        run: node scripts/aiMarkdownFromContext.js
-                              
 
-
-      - name: Debug generated files
-        working-directory: backend
-        run: |
-          echo "=== diff.txt ==="
-          cat docs/context/diff.txt || true
-
-          echo "=== current.txt ==="
-          cat docs/context/current.txt || true
-      
-          echo "=== current docs ==="
-          ls -l docs/current
-
-      # 8️⃣ Publish to Confluence
       - name: Publish to Confluence
         working-directory: backend
+        run: node scripts/generateConfluenceDocs.js
         env:
           CONFLUENCE_BASE_URL: ${{ secrets.CONFLUENCE_BASE_URL }}
           CONFLUENCE_EMAIL: ${{ secrets.CONFLUENCE_EMAIL }}
           CONFLUENCE_API_TOKEN: ${{ secrets.CONFLUENCE_API_TOKEN }}
-          CONFLUENCE_SPACE_KEY: ${{ secrets.CONFLUENCE_SPACE_KEY }}
-          CONFLUENCE_PARENT_PAGE_ID: ${{ secrets.CONFLUENCE_PARENT_PAGE_ID }}
-        run: node scripts/generateConfluenceDocs.js
+          CONFLUENCE_SPACE_KEY: VKYC
+          CONFLUENCE_PARENT_PAGE_ID: 2195457
