@@ -75,7 +75,7 @@ app.use((err, req, res, next) => {
 });
 console.log("AI_DOCS_TEST: logging enabled");
 
-console.log("CI_DIFF_TEST:", new Date().toISOString());
+console.log("CI_DIFF_TESTttttttt:", new Date().toISOString());
 
 
 module.exports = app;
