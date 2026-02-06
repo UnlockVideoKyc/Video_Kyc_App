@@ -40,7 +40,7 @@ process.on("SIGINT", () => {
 app.post("/kyc/start", async (req, res) => {
   res.json({ status: "KYC session started" });
 });
-
+console.log("new behavior");
 
 // backend/src/server.js
 // pipeline test change
