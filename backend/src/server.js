@@ -1,7 +1,6 @@
-
-
 require("dotenv").config();
 const app = require("./app");
+const { initSocket } = require("./config/socket"); // NEW
 
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || "0.0.0.0";
@@ -14,6 +13,9 @@ const server = app.listen(PORT, HOST, () => {
   console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
   console.log(`=======================================\n`);
 });
+
+// Initialize Socket.IO
+initSocket(server); // NEW
 
 // Graceful shutdown
 process.on("SIGTERM", () => {

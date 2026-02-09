@@ -1,67 +1,70 @@
 import { Box, Chip } from "@mui/material";
-import dummyImage from "../assets/dummy.png";
+import { useEffect, useRef } from "react";
 
-const VideoCallCustomerSection = () => {
+const VideoCallCustomerSection = ({ remoteStream }) => {
+  const videoRef = useRef(null);
+  const currentStreamRef = useRef(null); // ✅ Track current stream
+
+  useEffect(() => {
+    // ✅ Only update if stream actually changed
+    if (videoRef.current && remoteStream && currentStreamRef.current !== remoteStream) {
+      console.log('🔗 Attaching stream to video element');
+      
+      videoRef.current.srcObject = remoteStream;
+      currentStreamRef.current = remoteStream; // Save reference
+      
+      videoRef.current.play().catch(err => {
+        console.warn('Autoplay blocked, trying muted:', err);
+        videoRef.current.muted = true;
+        videoRef.current.play();
+      });
+    }
+  }, [remoteStream]);
+
   return (
-    <Box sx={{ 
-      borderRadius: '8px', 
-      overflow: 'hidden',
-      height: '100%',
-      boxShadow: 'none',
-      backgroundColor: 'white',
-      p: 2
-    }}>
-      {/* Video Area */}
-      <Box sx={{ 
-        position: 'relative',
-        height: "500px", 
-        borderRadius: '8px',
-        overflow: 'hidden',
-        backgroundColor: '#343a40',
-        mb: 2
-      }}>
-        <Box
-          component="img"
-          // src="../assets/image.png"
-          src={dummyImage}
-          alt="Customer Video"
-          sx={{ 
-            width: "100%", 
-            height: "100%", 
-            objectFit: "cover" 
+    <Box sx={{ borderRadius: '8px', overflow: 'hidden', p: 2 }}>
+      <Box sx={{ position: 'relative', height: 500, backgroundColor: '#000' }}>
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover"
           }}
         />
 
-        {/* Customer Tag */}
-        <Box sx={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          p: '8px' 
-        }}>
-          <Chip 
-            label="Customer" 
-            size="small" 
-            sx={{ 
-              backgroundColor: "black", 
-              color: "white",
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 500,
-              borderRadius: '4px'
-            }} 
-          />
-        </Box>
-      </Box>
+        <Chip
+          label="Agent"
+          size="small"
+          sx={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            backgroundColor: "black",
+            color: "white"
+          }}
+        />
 
-      {/* Date and Time Display */}
-      <Box sx={{
-        textAlign: 'center',
-        fontFamily: "'Inter', sans-serif",
-        fontSize: '0.875rem',
-        color: '#212529',
-        fontWeight: 500
-      }}>
-        17-Jun-2025, 05:30:21 PM
+        {!remoteStream && (
+          <Box sx={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            flexDirection: 'column',
+            gap: 2
+          }}>
+            <div className="spinner-border text-light" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <div>Waiting for customer video...</div>
+          </Box>
+        )}
       </Box>
     </Box>
   );

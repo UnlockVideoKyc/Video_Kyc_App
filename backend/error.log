@@ -1,0 +1,4 @@
+{"error":"Unknown column 'CustomerStatus' in 'field list'","level":"error","message":"Customer initiation error","timestamp":"2026-02-03T13:44:41.151Z"}
+{"error":"connect ETIMEDOUT","level":"error","message":"Customer initiation error","timestamp":"2026-02-03T13:49:41.782Z"}
+{"error":"connect ETIMEDOUT","level":"error","message":"Customer initiation error","timestamp":"2026-02-04T05:43:30.692Z"}
+{"error":"connect ETIMEDOUT","level":"error","message":"Customer initiation error","timestamp":"2026-02-04T05:43:44.519Z"}

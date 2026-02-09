@@ -11,18 +11,20 @@ import {
   Box,
   Typography,
 } from "@mui/material";
-import Pagination from '../../components/Pagination'
-
-/* ---------------- Status Chip ---------------- */
+import Pagination from '../../components/Pagination';
 const StatusChip = ({ status }) => {
-  if (status === "Approved")
+  if (!status) return <Chip label="Unknown" variant="outlined" />;
+  
+  if (status === "APPROVED" || status === "Approved")
     return <Chip label="Approved" color="success" variant="outlined" />;
-  if (status === "Rejected")
+  if (status === "REJECTED" || status === "Rejected")
     return <Chip label="Rejected" color="error" variant="outlined" />;
-  return <Chip label="Discrepancy" color="primary" variant="outlined" />;
+  if (status === "DISCREPANCY" || status === "Discrepancy")
+    return <Chip label="Discrepancy" color="primary" variant="outlined" />;
+    
+  return <Chip label={status} variant="outlined" />;
 };
 
-/* ---------------- Table ---------------- */
 const PastKycCallsTable = ({ data = [], loading = false }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -42,7 +44,6 @@ const PastKycCallsTable = ({ data = [], loading = false }) => {
     <>
       <TableContainer component={Paper}>
         <Table>
-          {/* ---------- HEADER ---------- */}
           <TableHead>
             <TableRow>
               <TableCell><b>Customer Name</b></TableCell>
@@ -54,28 +55,31 @@ const PastKycCallsTable = ({ data = [], loading = false }) => {
             </TableRow>
           </TableHead>
 
-          {/* ---------- BODY ---------- */}
           <TableBody>
-            {paginatedData.map((row, index) => (
-             <TableRow key={`${row.PastKycId || row.vcipId}-${index}`}>
-                <TableCell>{row.customerName || "-"}</TableCell>
-                <TableCell>{row.clientName || "-"}</TableCell>
-                <TableCell>{row.vcipId || "-"}</TableCell>
+            {paginatedData.map((row, index) => {
+              // ✅ Extract data from different possible column names
+              const customerName = row.CustomerName || row.customerName || "-";
+              const clientName = row.ClientName || row.clientName || "-";
+              const vcipId = row.VcipId || row.vcipId || "-";
+              const mobileNumber = row.MobileNumber || row.mobileNumber || "-";
+              const connectionId = row.ConnectionId || row.connectionId || "-";
+              const callStatus = row.CallStatus || row.callStatus || "Unknown";
 
-                {/* ✅ Contact Number */}
-                <TableCell>
-                  {row.mobileNumber || "-"}
-                </TableCell>
+              return (
+                <TableRow key={`${row.PastKycId || row.VcipId || index}`}>
+                  <TableCell>{customerName}</TableCell>
+                  <TableCell>{clientName}</TableCell>
+                  <TableCell>{vcipId}</TableCell>
+                  <TableCell>{mobileNumber}</TableCell>
+                  <TableCell>{connectionId}</TableCell>
+                  <TableCell>
+                    <StatusChip status={callStatus} />
+                  </TableCell>
+                </TableRow>
+              );
+           
+ })}
 
-                <TableCell>{row.connectionId ?? "-"}</TableCell>
-
-                <TableCell>
-                  <StatusChip status={row.callStatus} />
-                </TableCell>
-              </TableRow>
-            ))}
-
-            {/* ---------- EMPTY STATE ---------- */}
             {paginatedData.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} align="center">
@@ -87,7 +91,6 @@ const PastKycCallsTable = ({ data = [], loading = false }) => {
         </Table>
       </TableContainer>
 
-      {/* ---------- PAGINATION ---------- */}
       <Pagination
         currentPage={currentPage}
         totalItems={data.length}

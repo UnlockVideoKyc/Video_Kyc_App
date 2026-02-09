@@ -9,11 +9,12 @@ import {
   TextField,
   Divider,
   useMediaQuery,
-  useTheme
+  useTheme,
+  CircularProgress
 } from '@mui/material';
 import { Close, CallEnd as CallEndIcon } from '@mui/icons-material';
 
-const CallEndModal = ({ open, onClose, onConfirm }) => {
+const CallEndModal = ({ open, onClose, onConfirm, isLoading = false }) => {
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [remark, setRemark] = useState('');
   const theme = useTheme();
@@ -52,17 +53,30 @@ const CallEndModal = ({ open, onClose, onConfirm }) => {
   };
 
   const handleSubmit = () => {
-    const finalRemark = selectedOptions.includes("Other") 
-      ? `${selectedOptions.join(', ')}: ${remark}`
-      : selectedOptions.join(', ');
+    // Build the final remark
+    let finalRemark = selectedOptions.join(', ');
+    
+    // If "Other" is selected and there's a custom remark, append it
+    if (selectedOptions.includes("Other") && remark.trim()) {
+      finalRemark = `${finalRemark}: ${remark.trim()}`;
+    } else if (remark.trim()) {
+      // If there's a remark but "Other" wasn't selected, still include it
+      finalRemark = `${finalRemark}. Additional remark: ${remark.trim()}`;
+    }
+
     onConfirm(selectedOptions, finalRemark);
-    onClose();
+  };
+
+  const handleClose = () => {
+    if (!isLoading) {
+      onClose();
+    }
   };
 
   return (
     <Modal
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       aria-labelledby="call-end-modal-title"
       aria-describedby="call-end-modal-description"
       sx={{
@@ -85,7 +99,31 @@ const CallEndModal = ({ open, onClose, onConfirm }) => {
         overflowY: 'auto',
         m: 1,
         mt: isMobile ? '10vh' : 0,
+        position: 'relative'
       }}>
+        {/* Loading overlay */}
+        {isLoading && (
+          <Box sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            bgcolor: 'rgba(255, 255, 255, 0.9)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            borderRadius: '8px'
+          }}>
+            <CircularProgress size={50} />
+            <Typography sx={{ mt: 2, fontWeight: 500 }}>
+              Ending call...
+            </Typography>
+          </Box>
+        )}
+
         {/* Header with close button */}
         <Box sx={{ 
           display: 'flex', 
@@ -110,7 +148,8 @@ const CallEndModal = ({ open, onClose, onConfirm }) => {
             Facing an Issue During the Call?
           </Typography>
           <Button 
-            onClick={onClose}
+            onClick={handleClose}
+            disabled={isLoading}
             sx={{
               minWidth: 'auto',
               p: 0,
@@ -128,53 +167,54 @@ const CallEndModal = ({ open, onClose, onConfirm }) => {
           sx={{
             color: 'text.secondary',
             mb: 3,
-            fontSize: '1rem' // Fixed 16px equivalent
+            fontSize: '1rem'
           }}
         >
           Please select one of the option below to end the call
         </Typography>
 
         {/* All options in a single grid */}
-<Box sx={{
-  display: 'grid',
-  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-  gap: { xs: '8px', sm: '16px' },
-  mb: 3,
-  overflowY: 'auto',
-  maxHeight: { xs: '40vh', sm: 'none' },
-}}>
-  {options.map((option, index) => (
-    <FormControlLabel
-      key={index}
-      control={
-        <Checkbox
-          checked={selectedOptions.includes(option)}
-          onChange={() => handleOptionChange(option)}
-          size={isMobile ? 'small' : 'medium'}
-          color="primary"
-          sx={{ 
-            padding: '4px',
-            alignSelf: 'flex-start'
-          }}
-        />
-      }
-      label={
-        <Typography sx={{ 
-          fontSize: '1rem',
-          lineHeight: 1.5,
-          marginLeft: '8px'
+        <Box sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+          gap: { xs: '8px', sm: '16px' },
+          mb: 3,
+          overflowY: 'auto',
+          maxHeight: { xs: '40vh', sm: 'none' },
         }}>
-          {option}
-        </Typography>
-      }
-      sx={{ 
-        margin: 0,
-        alignItems: 'flex-start',
-        display: 'flex',
-      }}
-    />
-  ))}
-</Box>
+          {options.map((option, index) => (
+            <FormControlLabel
+              key={index}
+              control={
+                <Checkbox
+                  checked={selectedOptions.includes(option)}
+                  onChange={() => handleOptionChange(option)}
+                  disabled={isLoading}
+                  size={isMobile ? 'small' : 'medium'}
+                  color="primary"
+                  sx={{ 
+                    padding: '4px',
+                    alignSelf: 'flex-start'
+                  }}
+                />
+              }
+              label={
+                <Typography sx={{ 
+                  fontSize: '1rem',
+                  lineHeight: 1.5,
+                  marginLeft: '8px'
+                }}>
+                  {option}
+                </Typography>
+              }
+              sx={{ 
+                margin: 0,
+                alignItems: 'flex-start',
+                display: 'flex',
+              }}
+            />
+          ))}
+        </Box>
 
         {/* Remark field (always visible) */}
         <Typography 
@@ -183,7 +223,7 @@ const CallEndModal = ({ open, onClose, onConfirm }) => {
             fontWeight: 500,
             color: 'primary.main',
             mb: 1,
-            fontSize: '1rem' // Fixed 16px equivalent
+            fontSize: '1rem'
           }}
         >
           Add remark (optional)
@@ -195,10 +235,11 @@ const CallEndModal = ({ open, onClose, onConfirm }) => {
           placeholder="Enter remarks"
           value={remark}
           onChange={(e) => setRemark(e.target.value)}
+          disabled={isLoading}
           sx={{ 
             mb: 3,
             '& .MuiInputBase-root': {
-              fontSize: '1rem' // Fixed 16px equivalent
+              fontSize: '1rem'
             }
           }}
           size={isMobile ? 'small' : 'medium'}
@@ -216,9 +257,9 @@ const CallEndModal = ({ open, onClose, onConfirm }) => {
         }}>
           <Button 
             variant="contained"
-            startIcon={<CallEndIcon sx={{ color: 'white' }} />}
+            startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : <CallEndIcon sx={{ color: 'white' }} />}
             onClick={handleSubmit}
-            disabled={selectedOptions.length === 0}
+            disabled={selectedOptions.length === 0 || isLoading}
             sx={{ 
               width: { xs: '100%', sm: 'auto' },
               height: { xs: 40, sm: 45 },
@@ -228,11 +269,15 @@ const CallEndModal = ({ open, onClose, onConfirm }) => {
               '&:hover': { 
                 backgroundColor: 'error.dark'
               },
+              '&:disabled': {
+                backgroundColor: 'rgba(220, 53, 69, 0.5)',
+                color: 'white'
+              },
               textTransform: 'none',
               px: 2,           
               py: 1,
               fontWeight: 500,
-              fontSize: '1rem', // Fixed 16px equivalent
+              fontSize: '1rem',
               '& .MuiButton-startIcon': {
                 marginRight: '6px',
                 '& > *:first-of-type': {
@@ -241,7 +286,7 @@ const CallEndModal = ({ open, onClose, onConfirm }) => {
               }
             }}
           >
-            End Call
+            {isLoading ? 'Ending Call...' : 'End Call'}
           </Button>
         </Box>
       </Box>

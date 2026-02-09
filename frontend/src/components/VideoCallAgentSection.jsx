@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react"; // ✅ Updated imports
 import {
   IconButton,
   Chip,
@@ -17,24 +17,35 @@ import {
   FullscreenExit as MinimizeIcon,
   CallEnd as PhoneIcon
 } from "@mui/icons-material";
-import dummyImage from "../assets/dummy.png";
 import CallEndModal from "./CallEndModal";
+import socketService from "../services/socket.service";
+import webrtcService from "../services/webrtc.service";
+import { endCall } from "../api/webrtc.api";
 
-
-const VideoCallAgentSection = ({ onFullScreenToggle }) => {
+const VideoCallAgentSection = ({ onFullScreenToggle, localStream, connectionId, onCallEnded }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  // ✅ ADD THIS REF
+  const localVideoRef = useRef(null);
+  
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [message, setMessage] = useState("");
   const [endCallModalOpen, setEndCallModalOpen] = useState(false);
   const [userTooltipOpen, setUserTooltipOpen] = useState(false);
   const [locationTooltipOpen, setLocationTooltipOpen] = useState(false);
   const [wifiTooltipOpen, setwifiTooltipOpen] = useState(false);
+  const [isEndingCall, setIsEndingCall] = useState(false);
 
+  // ✅ ADD THIS useEffect
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream]);
   const toggleFullScreen = () => {
     const newFullScreenState = !isFullScreen;
     setIsFullScreen(newFullScreenState);
-    // Notify parent component to hide customer section
     if (onFullScreenToggle) {
       onFullScreenToggle(newFullScreenState);
     }
@@ -48,10 +59,77 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
     setEndCallModalOpen(false);
   };
 
-  const handleEndCall = (selectedOptions, remark) => {
-    console.log('Ending call with:', { selectedOptions, remark });
-    setEndCallModalOpen(false);
+  const handleEndCall = async (selectedOptions, remark) => {
+    try {
+      setIsEndingCall(true);
+      console.log('🔴 Ending call with:', { selectedOptions, remark, connectionId });
+
+      // First, notify customer via socket about the end call reason
+      socketService.emit('call-ended-by-agent', {
+        connectionId,
+        reason: remark,
+        selectedOptions
+      });
+
+      // Wait a moment for the message to be delivered
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Call the backend API to end the call and move to past KYC
+      const response = await endCall({
+        connectionId,
+        reason: remark,
+        callStatus: 'REJECTED', // or determine based on selectedOptions
+        endedBy: 'agent'
+      });
+
+      console.log('✅ Call ended successfully:', response);
+
+      // Clean up WebRTC connection
+      webrtcService.close();
+      socketService.disconnect();
+
+      // Close modal
+      setEndCallModalOpen(false);
+
+      // Notify parent component
+      if (onCallEnded) {
+        onCallEnded();
+      }
+
+      // Navigate back to dashboard or show success message
+      window.location.href = '/work-dashboard';
+
+    } catch (error) {
+      console.error('❌ Error ending call:', error);
+      alert('Failed to end call properly. Please try again.');
+    } finally {
+      setIsEndingCall(false);
+    }
   };
+
+const handleNotifyCustomer = () => {
+  if (!message.trim()) {
+    alert('Please enter a message');
+    return;
+  }
+  
+  if (!connectionId) {
+    alert('No connection ID available');
+    console.error('❌ No connectionId available');
+    return;
+  }
+  
+  console.log('📤 Notifying customer:', message);
+  console.log('📍 Using connectionId:', connectionId);
+  
+  socketService.emit('notify-customer', {
+    room: connectionId,
+    message: message
+  });
+  
+  setMessage('');
+  console.log('✅ Message sent to customer');
+};
 
   const handleUserTooltipOpen = () => {
     if (isMobile) {
@@ -84,6 +162,7 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
   const toggleLocationTooltip = () => {
     setLocationTooltipOpen(!locationTooltipOpen);
   };
+
   const togglewifiTooltip = () => {
     setwifiTooltipOpen(!wifiTooltipOpen);
   };
@@ -97,7 +176,6 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
       backgroundColor: 'white'
     }}>
       <Box sx={{ p: 0 }}>
-        {/* Video Call Area - Responsive Height */}
         <Box sx={{
           position: 'relative',
           height: isFullScreen ? '600px' : { xs: '300px', sm: '400px' },
@@ -109,18 +187,21 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
           width: { xs: 'calc(100% - 16px)', sm: 'calc(100% - 32px)' },
           backgroundColor: '#343a40'
         }}>
-          <Box
-            component="img"
-            src={dummyImage}
-            alt="Agent Video"
-            sx={{
+          <video
+            ref={(videoElement) => {
+              if (videoElement && localStream) {
+                videoElement.srcObject = localStream;
+              }
+            }}
+            autoPlay
+            playsInline
+            style={{
               width: "100%",
               height: "100%",
               objectFit: "cover"
             }}
           />
 
-          {/* Agent Tag */}
           <Box sx={{
             position: 'absolute',
             top: 0,
@@ -128,7 +209,7 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
             p: { xs: '4px', sm: '8px' }
           }}>
             <Chip
-              label="Agent"
+              label="Customer"
               size="small"
               sx={{
                 backgroundColor: "black",
@@ -139,9 +220,23 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
               }}
             />
           </Box>
+          
+          {!localStream && (
+            <Box sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              color: 'white',
+              fontSize: '16px',
+              textAlign: 'center'
+            }}>
+              Loading video...
+            </Box>
+          )}
         </Box>
 
-        {/* Call Controls - Responsive Padding */}
+        {/* Call Controls */}
         <Box sx={{
           p: { xs: '8px', sm: '12px' },
           backgroundColor: "white"
@@ -152,7 +247,7 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
             gap: { xs: '4px', sm: '8px' },
             flexWrap: 'wrap'
           }}>
-            {/* User Info Button with Responsive Tooltip */}
+            {/* User Info Button */}
             <Tooltip
               title={
                 <Box sx={{ p: 1, fontFamily: "'Inter', sans-serif" }}>
@@ -227,7 +322,7 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
               </IconButton>
             </Tooltip>
 
-            {/* Location Button with Responsive Tooltip */}
+            {/* Location Button */}
             <Tooltip
               title={
                 <Box sx={{ p: 1, fontFamily: "'Inter', sans-serif" }}>
@@ -296,10 +391,9 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
               </IconButton>
             </Tooltip>
 
-            {/*WIFI Button with Responsive Tooltip */}
+            {/* WiFi Button */}
             <Tooltip
               title={
-              
                 <Box sx={{ p: 1, fontFamily: "'Inter', sans-serif" }}>
                   <Box component="h3" sx={{
                     margin: "0 0 8px 0",
@@ -311,7 +405,6 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
                   }}>
                     Agent Speed Network
                   </Box>
-
                   <Box sx={{
                     display: 'flex',
                     justifyContent: 'center',
@@ -335,7 +428,6 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
                         incoming
                       </Box>
                     </Box>
-
                     <Box sx={{ textAlign: 'center' }}>
                       <Box component="strong" sx={{
                         display: 'block',
@@ -353,7 +445,6 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
                       </Box>
                     </Box>
                   </Box>
-
                   <Box component="h3" sx={{
                     margin: "0 0 8px 0",
                     fontSize: '16px',
@@ -364,7 +455,6 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
                   }}>
                     Customer Speed Network
                   </Box>
-
                   <Box sx={{
                     display: 'flex',
                     justifyContent: 'center',
@@ -388,7 +478,6 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
                         incoming
                       </Box>
                     </Box>
-
                     <Box sx={{ textAlign: 'center' }}>
                       <Box component="strong" sx={{
                         display: 'block',
@@ -407,7 +496,6 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
                     </Box>
                   </Box>
                 </Box>
-
               }
               arrow
               placement="bottom"
@@ -451,9 +539,8 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
               </IconButton>
             </Tooltip>
 
-            {/* Other Buttons with Responsive Sizing */}
+            {/* Fullscreen and End Call Buttons */}
             {[
-              // { icon: WifiIcon, label: 'Network' },
               {
                 icon: isFullScreen ? MinimizeIcon : MaximizeIcon,
                 label: 'Fullscreen',
@@ -473,6 +560,7 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
               <IconButton
                 key={index}
                 onClick={button.onClick}
+                disabled={isEndingCall}
                 sx={{
                   bgcolor: "rgba(28, 67, 166, 0.1)",
                   color: "#1C43A6",
@@ -546,6 +634,7 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
           <Button
             fullWidth
             variant="contained"
+            onClick={handleNotifyCustomer}
             sx={{
               py: 1.5,
               backgroundColor: "#1C43A6",
@@ -567,6 +656,7 @@ const VideoCallAgentSection = ({ onFullScreenToggle }) => {
         open={endCallModalOpen}
         onClose={handleCloseEndCallModal}
         onConfirm={handleEndCall}
+        isLoading={isEndingCall}
       />
     </Box>
   );
