@@ -1,0 +1,38 @@
+diff --git a/backend/scripts/generateDiff.js b/backend/scripts/generateDiff.js
+index c08f3c7..d508867 100644
+--- a/backend/scripts/generateDiff.js
++++ b/backend/scripts/generateDiff.js
+@@ -12,8 +12,11 @@ try {
+   const commits = run("git rev-list --max-count=2 HEAD").split("\n");
+ 
+   if (commits.length < 2) {
+-    fs.writeFileSync(OUT, "NO_RELEVANT_CODE_CHANGES\n");
+-    console.log("⚠️ Only one commit found, skipping diff");
++    fs.writeFileSync(
++      OUT,
++      "NO_RELEVANT_CODE_CHANGES\nReason: only one commit available\n"
++    );
++    console.log("⚠️ Only one commit found");
+     process.exit(0);
+   }
+ 
+@@ -21,7 +24,7 @@ try {
+ 
+   console.log(`🟢 Diff range: ${before} → ${after}`);
+ 
+-  const diff = run(`git diff ${before} ${after} -- backend src frontend`);
++  const diff = run(`git diff ${before} ${after}`);
+ 
+   fs.writeFileSync(
+     OUT,
+@@ -29,8 +32,7 @@ try {
+   );
+ 
+   console.log("✅ diff.txt written");
+-} catch (err) {
+-  console.error("❌ Diff generation failed");
+-  console.error(err.message);
++} catch (e) {
++  console.error("❌ Diff failed:", e.message);
+   process.exit(1);
+ }
