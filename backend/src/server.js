@@ -1,23 +1,38 @@
+process.env.TZ = "UTC";
+
 require("dotenv").config();
-const app = require("./app");
-const { initSocket } = require("./config/socket"); // NEW
+const http = require("http");
+const app = require("./app");                 // ✅ import express app
+const { initSocket } = require("./config/socket"); // ✅ single socket entry
 
 const PORT = process.env.PORT || 5000;
 const HOST = process.env.HOST || "0.0.0.0";
 
-const server = app.listen(PORT, HOST, () => {
-  console.log(`\n=======================================`);
-  console.log(`🚀 Server is running`);
-  console.log(`📍 Host: ${HOST}`);
+// Create HTTP server
+const server = http.createServer(app);
+
+// ✅ Initialize Socket.IO ONCE
+initSocket(server);
+
+// ===================================
+// START SERVER
+// ===================================
+server.listen(PORT, HOST, () => {
+  console.log("\n========================================");
+  console.log("🚀 DigiKhata Video KYC Server Started");
+  console.log("========================================");
+  console.log(`🌍 Host: ${HOST}`);
   console.log(`🔗 Port: ${PORT}`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
-  console.log(`=======================================\n`);
+  console.log(`📱 Mobile App: http://localhost:${PORT}/mobile`);
+  console.log(`🔗 API: http://localhost:${PORT}/v1`);
+  console.log(`🏥 Health: http://localhost:${PORT}/health`);
+  console.log(`📡 Socket.IO: http://localhost:${PORT}`);
+  console.log("========================================\n");
 });
 
-// Initialize Socket.IO
-initSocket(server); // NEW
-
-// Graceful shutdown
+// ===================================
+// GRACEFUL SHUTDOWN
+// ===================================
 process.on("SIGTERM", () => {
   console.log("SIGTERM signal received: closing HTTP server");
   server.close(() => {
@@ -27,9 +42,11 @@ process.on("SIGTERM", () => {
 });
 
 process.on("SIGINT", () => {
-  console.log("SIGINT signal received: closing HTTP server");
+  console.log("\nSIGINT signal received: closing HTTP server");
   server.close(() => {
     console.log("HTTP server closed");
     process.exit(0);
   });
 });
+
+module.exports = server;

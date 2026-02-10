@@ -122,10 +122,11 @@ const handleNotifyCustomer = () => {
   console.log('📤 Notifying customer:', message);
   console.log('📍 Using connectionId:', connectionId);
   
-  socketService.emit('notify-customer', {
-    room: connectionId,
-    message: message
-  });
+  socketService.emit('agent-message', {
+  connectionId,
+  message
+});
+
   
   setMessage('');
   console.log('✅ Message sent to customer');

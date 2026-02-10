@@ -50,6 +50,34 @@ app.use((req, res, next) => {
   );
   next();
 });
+const path = require("path");
+
+// ===================================
+// MOBILE UI STATIC SERVING
+// ===================================
+const frontendPath = path.join(__dirname, "../../frontend/public");
+const mobilePath = path.join(frontendPath, "mobile");
+
+// Serve mobile static files
+app.use("/mobile", express.static(mobilePath));
+
+// Mobile config endpoint
+app.get("/mobile/api/config", (req, res) => {
+  const protocol = req.secure ? "https" : "http";
+  const host = req.get("host");
+
+  res.json({
+    apiUrl: `${protocol}://${host}/v1`,
+    socketUrl: `${protocol}://${host}`,
+    environment: process.env.NODE_ENV || "development",
+  });
+});
+
+// Mobile SPA fallback
+app.get(/^\/mobile\/.*$/, (req, res) => {
+  res.sendFile(path.join(mobilePath, "index.html"));
+});
+
 
 // Routes
 app.use("/v1", routes);

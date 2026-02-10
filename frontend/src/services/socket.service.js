@@ -1,69 +1,92 @@
-import { io } from 'socket.io-client';
+import { io } from "socket.io-client";
 
-const SOCKET_URL = import.meta.env.VITE_API_BASE_URL.replace('/v1', '');
+const SOCKET_URL = import.meta.env.VITE_API_BASE_URL.replace("/v1", "");
 
 class SocketService {
   constructor() {
     this.socket = null;
     this.connected = false;
+    this.joinedRoom = null;
+    this.connecting = false;
   }
 
-  connect() {
+  async connect() {
+    if (this.connected) {
+      console.log("♻️ Agent socket already connected");
+      return;
+    }
+
+    if (this.connecting) return;
+
+    this.connecting = true;
+
     return new Promise((resolve, reject) => {
       this.socket = io(SOCKET_URL, {
-        transports: ['websocket', 'polling'],
+        transports: ["websocket"],
         reconnection: true,
-        reconnectionAttempts: 5,
+        reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
         auth: {
-          token: localStorage.getItem('token')
-        }
+          token: localStorage.getItem("token"),
+        },
       });
 
-      this.socket.on('connect', () => {
-        console.log('✅ Socket connected:', this.socket.id);
+      this.socket.once("connect", () => {
+        console.log("✅ Agent socket connected:", this.socket.id);
         this.connected = true;
+        this.connecting = false;
         resolve();
       });
 
-      this.socket.on('connect_error', (error) => {
-        console.error('❌ Socket connection error:', error);
-        reject(error);
+      this.socket.once("connect_error", (err) => {
+        console.error("❌ Agent socket error:", err);
+        this.connecting = false;
+        reject(err);
       });
 
-      this.socket.on('disconnect', () => {
-        console.log('🔌 Socket disconnected');
+      this.socket.on("disconnect", () => {
+        console.warn("🔌 Agent socket disconnected");
         this.connected = false;
+        this.joinedRoom = null;
       });
     });
   }
 
-  joinRoom(connectionId, userType) {
-    if (!this.connected) {
-      console.error('Socket not connected');
+  joinRoom(connectionId) {
+    if (!this.connected) return;
+
+    if (this.joinedRoom === connectionId) {
+      console.log("♻️ Agent already in room", connectionId);
       return;
     }
-    console.log(`Joining room: ${connectionId} as ${userType}`);
-    this.socket.emit('join-room', { connectionId, userType });
-  }
 
-  on(event, callback) {
-    if (this.socket) {
-      this.socket.on(event, callback);
-    }
+    this.joinedRoom = connectionId;
+    console.log("🚪 Agent joining room:", connectionId);
+
+    this.socket.emit("join-room", {
+      connectionId,
+      userType: "agent",
+    });
   }
 
   emit(event, data) {
-    if (this.socket && this.connected) {
+    if (this.connected) {
       this.socket.emit(event, data);
     }
   }
 
+  on(event, callback) {
+    this.socket?.on(event, callback);
+  }
+
+  off(event, callback) {
+    this.socket?.off(event, callback);
+  }
+
   disconnect() {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.connected = false;
-    }
+    this.socket?.disconnect();
+    this.connected = false;
+    this.joinedRoom = null;
   }
 }
 

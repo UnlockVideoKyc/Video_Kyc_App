@@ -90,6 +90,7 @@ exports.initiateAgentSession = async ({
   return { success: true };
 };
 
+// ✅ FIXED END CALL FUNCTION
 exports.endCall = async (connectionId, reason, callStatus) => {
   try {
     console.log('🔴 endCall called:', { connectionId, reason, callStatus });
@@ -116,6 +117,7 @@ exports.endCall = async (connectionId, reason, callStatus) => {
     const { WaitlistId, VcipId, CustomerName } = waitlistRows[0];
     console.log('📋 Waitlist:', WaitlistId, VcipId);
 
+    // ✅ ALWAYS USE 'COMPLETED' STATUS
     console.log('📝 Status mapping:', callStatus, '→ COMPLETED');
 
     await db.query(
@@ -132,6 +134,7 @@ exports.endCall = async (connectionId, reason, callStatus) => {
     );
     console.log('✅ Deleted from Live');
 
+    // ✅ CRITICAL: Hard-coded 'COMPLETED' in SQL
     await db.query(
       `UPDATE Video_Kyc_Waitlist 
        SET CallStatus = 'COMPLETED', CustomerStatus = 'Completed'
