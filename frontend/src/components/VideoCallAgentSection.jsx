@@ -64,7 +64,7 @@ const VideoCallAgentSection = ({ onFullScreenToggle, localStream, connectionId, 
       setIsEndingCall(true);
       console.log('🔴 Ending call with:', { selectedOptions, remark, connectionId });
 
-      // First, notify customer via socket about the end call reason
+      // First, notify customer via socket about the end call reasons
       socketService.emit('call-ended-by-agent', {
         connectionId,
         reason: remark,
