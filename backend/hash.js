@@ -1,4 +1,4 @@
-// hash-generator.js
+// hash-generator.jss
 const bcrypt = require('bcrypt');
 
 async function generateHash() {
