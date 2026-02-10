@@ -58,10 +58,6 @@ const path = require("path");
 const frontendPath = path.join(__dirname, "../../frontend/public");
 const mobilePath = path.join(frontendPath, "mobile");
 
-// Serve mobile static files
-app.use("/mobile", express.static(mobilePath));
-
-// Mobile config endpoint
 app.get("/mobile/api/config", (req, res) => {
   const protocol = req.secure ? "https" : "http";
   const host = req.get("host");
@@ -72,6 +68,12 @@ app.get("/mobile/api/config", (req, res) => {
     environment: process.env.NODE_ENV || "development",
   });
 });
+
+// Serve mobile static files
+app.use("/mobile", express.static(mobilePath));
+
+// Mobile config endpoint
+
 
 // Mobile SPA fallback
 app.get(/^\/mobile\/.*$/, (req, res) => {
