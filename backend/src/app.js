@@ -58,27 +58,38 @@ const path = require("path");
 const frontendPath = path.join(__dirname, "../../frontend/public");
 const mobilePath = path.join(frontendPath, "mobile");
 
+// ===================================
+// MOBILE API CONFIG (MUST BE FIRST)
+// ===================================
 app.get("/mobile/api/config", (req, res) => {
-  const protocol = req.secure ? "https" : "http";
+  const protocol =
+    req.headers["x-forwarded-proto"] ||
+    (req.secure ? "https" : "http");
+
   const host = req.get("host");
 
   res.json({
     apiUrl: `${protocol}://${host}/v1`,
     socketUrl: `${protocol}://${host}`,
-    environment: process.env.NODE_ENV || "development",
+    environment: process.env.NODE_ENV || "production",
   });
 });
 
-// Serve mobile static files
+// ===================================
+// MOBILE STATIC FILES
+// ===================================
 app.use("/mobile", express.static(mobilePath));
 
-// Mobile config endpoint
-
-
-// Mobile SPA fallback
-app.get(/^\/mobile\/.*$/, (req, res) => {
+// ===================================
+// MOBILE SPA FALLBACK (EXCLUDE /api)
+// ===================================
+app.get("/mobile/*", (req, res, next) => {
+  if (req.path.startsWith("/mobile/api")) {
+    return next(); // 🔥 DO NOT hijack API
+  }
   res.sendFile(path.join(mobilePath, "index.html"));
 });
+
 
 
 // Routes
