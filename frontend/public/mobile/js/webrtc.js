@@ -34,7 +34,6 @@ class WebRTCService {
             console.log(`- ${d.label} (${d.deviceId})`)
         );
 
-        // Prefer Bluetooth / Headset mic
         const bluetoothMic = audioInputs.find(d =>
             d.label.toLowerCase().includes("bluetooth") ||
             d.label.toLowerCase().includes("headset") ||
@@ -89,6 +88,7 @@ class WebRTCService {
             });
 
             console.log("✅ Local stream obtained");
+
             console.log("🎤 Audio tracks:", this.localStream.getAudioTracks().length);
             console.log("📹 Video tracks:", this.localStream.getVideoTracks().length);
 
@@ -101,7 +101,25 @@ class WebRTCService {
                 });
             });
 
+            // ⭐⭐⭐ LOCAL PREVIEW FIX ⭐⭐⭐
+            const localVideo = document.getElementById("localVideo");
+
+            if (localVideo) {
+                console.log("📺 Attaching local stream to preview");
+
+                localVideo.srcObject = this.localStream;
+                localVideo.muted = true;
+                localVideo.playsInline = true;
+
+                localVideo.play().catch(err =>
+                    console.warn("⚠️ Local preview autoplay blocked:", err)
+                );
+            } else {
+                console.warn("❌ localVideo element NOT found");
+            }
+
             return this.localStream;
+
         } catch (error) {
             console.error("❌ Error getting local stream:", error);
             throw error;
@@ -115,7 +133,6 @@ class WebRTCService {
         console.log("🔗 Creating peer connection...");
         this.peerConnection = new RTCPeerConnection(this.configuration);
 
-        // ➕ Add local tracks
         this.localStream.getTracks().forEach(track => {
             this.peerConnection.addTrack(track, this.localStream);
             console.log(`➕ Added ${track.kind} track`);
@@ -127,14 +144,16 @@ class WebRTCService {
 
             if (event.streams && event.streams[0]) {
                 this.remoteStream = event.streams[0];
+
                 const remoteVideo = document.getElementById("remoteVideo");
 
                 if (remoteVideo) {
+                    console.log("📺 Attaching remote stream");
+
                     remoteVideo.srcObject = this.remoteStream;
                     remoteVideo.muted = false;
                     remoteVideo.volume = 1.0;
 
-                    // 🔊 Force Bluetooth speaker if available
                     if (typeof remoteVideo.setSinkId === "function") {
                         const speakerId = await this.getPreferredAudioOutput();
                         if (speakerId) {
@@ -143,8 +162,8 @@ class WebRTCService {
                         }
                     }
 
-                    await remoteVideo.play().catch(err =>
-                        console.warn("⚠️ Autoplay blocked:", err)
+                    remoteVideo.play().catch(err =>
+                        console.warn("⚠️ Remote autoplay blocked:", err)
                     );
                 }
             }
@@ -160,7 +179,6 @@ class WebRTCService {
             }
         };
 
-        // 🔗 Connection state
         this.peerConnection.onconnectionstatechange = () => {
             console.log("🔗 Connection state:", this.peerConnection.connectionState);
         };
