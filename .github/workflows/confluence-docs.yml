@@ -26,6 +26,18 @@ jobs:
       - name: Generate diff
         working-directory: backend
         run: node scripts/generateDiff.js
+      - name: DEBUG DOCS OUTPUT
+        working-directory: backend
+        run: |
+      - name: DEBUG DOCS OUTPUT
+        working-directory: backend
+        run : |
+             echo "===== DIFF ====="
+             cat docs/context/diff.txt
+             echo "===== CONTEXT ====="
+             cat docs/context/current.txt
+             echo "===== MARKDOWN ====="
+             cat docs/current/backend.md
 
       - name: Generate context
         working-directory: backend

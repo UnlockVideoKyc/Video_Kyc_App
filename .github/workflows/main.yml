@@ -104,8 +104,8 @@ jobs:
       # ---------- BACKEND HEALTH CHECK ----------
       - name: Verify Backend Health (NGINX + API)
         run: |
-          sleep 5
-          curl -f http://127.0.0.1:5000/health
+          sleep 10
+          curl -f http://yo1.kycstack.in/health
 
       # ---------- FRONTEND DEPLOY ----------
       - name: Download frontend build
