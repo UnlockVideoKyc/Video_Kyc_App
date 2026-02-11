@@ -122,15 +122,9 @@ app.use((err, req, res, next) => {
     message: err.message,
   });
 });
-// ===============================
-// DOCS PIPELINE TEST BLOCK
-// ===============================
-const docsTestMarker = {
-  timestamp: new Date().toISOString(),
-  message: "CI_DOCS_TEST_RUN",
-};
 
-console.log("🚀 DOCS PIPELINE TEST:", docsTestMarker);
+
+console.log("🚀 DOCS PIPELINE TEST:");
 // ===============================
 
 
