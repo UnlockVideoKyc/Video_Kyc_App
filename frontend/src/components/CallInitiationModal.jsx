@@ -110,7 +110,7 @@ const CallInitiationModal = ({
         console.log('📡 Fetching connectionId from backend for VCIP:', vcipId);
 
         const response = await fetch(
-          `http://localhost:5000/v1/webrtc/connection/${vcipId}`,
+          `${API}/webrtc/connection/${vcipId}`,
           {
             method: "GET",
             headers: {
