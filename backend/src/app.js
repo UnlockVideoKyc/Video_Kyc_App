@@ -83,7 +83,7 @@ app.use("/mobile", express.static(mobilePath));
 // ===================================
 // MOBILE SPA FALLBACK (EXCLUDE /api)
 // ===================================
-app.get("/mobile/*", (req, res, next) => {
+app.get('/mobile', (req, res, next) => {
   if (req.path.startsWith("/mobile/api")) {
     return next(); // 🔥 DO NOT hijack API
   }
