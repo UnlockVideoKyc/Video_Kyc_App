@@ -12,6 +12,8 @@ import socketService from "../services/socket.service";
 import webrtcService from "../services/webrtc.service";
 import { initiateAgentSession } from "../api/webrtc.api";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const CallInitiationModal = ({
   open,
   onClose,
